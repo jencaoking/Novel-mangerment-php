@@ -71,7 +71,7 @@
                                                 立即支付
                                             </a>
                                         <?php elseif ($order['status'] === 'paid'): ?>
-                                            <a href="/download.php?id=<?= $order['product_id'] ?>" class="btn btn-primary btn-sm">
+                                            <a href="/download/<?= $order['product_id'] ?>" class="btn btn-primary btn-sm">
                                                 下载
                                             </a>
                                         <?php endif; ?>

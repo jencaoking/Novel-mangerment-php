@@ -4,17 +4,20 @@ namespace App\Controllers;
 use App\Models\ProductModel;
 use App\Models\CategoryModel;
 use App\Models\OrderModel;
+use App\Models\DownloadModel;
 
 class ProductController {
     
     protected $productModel;
     protected $categoryModel;
     protected $orderModel;
+    protected $downloadModel;
 
     public function __construct() {
         $this->productModel = new ProductModel();
         $this->categoryModel = new CategoryModel();
         $this->orderModel = new OrderModel();
+        $this->downloadModel = new DownloadModel();
     }
     
     public function novels() {
@@ -115,5 +118,63 @@ class ProductController {
         }
 
         require __DIR__ . '/../../views/product.phtml';
+    }
+
+    /**
+     * 安全下载处理
+     */
+    public function download($id) {
+        $productId = (int)$id;
+        
+        // 1. 检查用户登录状态
+        if (!isLoggedIn()) {
+            $_SESSION['redirect_url'] = "/download/{$productId}";
+            redirect('/login');
+        }
+
+        $userId = getCurrentUserId();
+        $product = $this->productModel->getProductDetail($productId);
+
+        // 2. 验证商品是否存在
+        if (!$product) {
+            http_response_code(404);
+            die('商品不存在');
+        }
+
+        // 3. 验证购买权限
+        $order = $this->orderModel->getPaidOrder($userId, $productId);
+        if (!$order) {
+            http_response_code(403);
+            die('您尚未购买此商品，无权下载');
+        }
+
+        // 4. 确定文件路径
+        $fileDir = $product['type'] === 'novel' ? 'novels/' : 'music/';
+        $filePath = UPLOAD_PATH . $fileDir . $product['file_path'];
+
+        // 5. 检查物理文件是否存在
+        if (!file_exists($filePath)) {
+            http_response_code(404);
+            die('文件已丢失，请联系管理员');
+        }
+
+        // 6. 记录下载日志
+        $this->downloadModel->logDownload($userId, $productId, $order['id']);
+
+        // 7. 发送文件（流式输出）
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($product['title']) . '.' . pathinfo($filePath, PATHINFO_EXTENSION) . '"');
+        header('Content-Transfer-Encoding: binary');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filePath));
+        
+        // 清空缓冲区并输出文件
+        ob_clean();
+        flush();
+        readfile($filePath);
+        exit;
     }
 }

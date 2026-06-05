@@ -64,6 +64,7 @@ try {
     $router->get('/novels', 'ProductController@novels');
     $router->get('/product/{id}', 'ProductController@show');
     $router->post('/product/{id}', 'ProductController@buy');
+    $router->get('/download/{id}', 'ProductController@download', ['AuthMiddleware']);
     
     // ==========================================
     // 2. 认证模块路由（登录/注册/登出）

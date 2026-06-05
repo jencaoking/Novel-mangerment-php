@@ -179,4 +179,17 @@ class OrderModel extends BaseModel {
         $sql = "UPDATE {$this->table} SET status = 'paid', pay_time = ?, trade_no = ? WHERE id = ?";
         return $this->execute($sql, [$payTime, $tradeNo, $orderId]);
     }
+
+    /**
+     * 获取用户针对某商品的已支付订单
+     * @param int $userId
+     * @param int $productId
+     * @return array|false
+     */
+    public function getPaidOrder($userId, $productId) {
+        $sql = "SELECT id, order_no FROM {$this->table} 
+                WHERE user_id = ? AND product_id = ? AND status = 'paid' 
+                ORDER BY pay_time DESC LIMIT 1";
+        return $this->fetch($sql, [$userId, $productId]);
+    }
 }

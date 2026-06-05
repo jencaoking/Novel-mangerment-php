@@ -32,6 +32,18 @@ define('CSRF_TOKEN_NAME', 'csrf_token');
 
 define('ITEMS_PER_PAGE', 12);
 
+// 支付宝支付配置
+define('ALIPAY_APP_ID', getenv('ALIPAY_APP_ID') ?: 'YOUR_ALIPAY_APP_ID');
+define('ALIPAY_PRIVATE_KEY', getenv('ALIPAY_PRIVATE_KEY') ?: 'YOUR_ALIPAY_PRIVATE_KEY');
+define('ALIPAY_PUBLIC_KEY', getenv('ALIPAY_PUBLIC_KEY') ?: 'YOUR_ALIPAY_PUBLIC_KEY');
+define('ALIPAY_GATEWAY_URL', getenv('ALIPAY_GATEWAY_URL') ?: 'https://openapi.alipay.com/gateway.do');
+define('ALIPAY_RETURN_URL', getenv('ALIPAY_RETURN_URL') ?: SITE_URL . 'payment/return');
+define('ALIPAY_NOTIFY_URL', getenv('ALIPAY_NOTIFY_URL') ?: SITE_URL . 'payment/notify');
+define('ALIPAY_SIGN_TYPE', 'RSA2');
+define('ALIPAY_CHARSET', 'UTF-8');
+define('ALIPAY_FORMAT', 'json');
+define('ALIPAY_VERSION', '1.0');
+
 date_default_timezone_set('Asia/Shanghai');
 
 error_reporting(E_ALL);

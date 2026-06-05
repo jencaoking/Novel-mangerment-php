@@ -75,6 +75,14 @@ try {
     $router->get('/logout', 'AuthController@logout');
     
     // ==========================================
+    // 2.5 支付模块路由
+    // ==========================================
+    $router->get('/payment/pay/{orderId}', 'PaymentController@pay', ['AuthMiddleware']);
+    $router->post('/payment/notify', 'PaymentController@notify');
+    $router->get('/payment/return', 'PaymentController@returnUrl');
+    $router->get('/payment/query/{orderId}', 'PaymentController@query', ['AuthMiddleware']);
+    
+    // ==========================================
     // 3. 用户中心路由（需要普通登录权限）
     // ==========================================
     $router->get('/user', 'UserController@index', ['AuthMiddleware']);

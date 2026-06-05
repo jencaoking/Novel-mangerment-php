@@ -202,4 +202,14 @@ class ProductModel extends BaseModel {
         $result = $this->fetch($sql, $params);
         return $result['total'];
     }
+
+    /**
+     * 增加商品销量
+     * @param int $productId 商品ID
+     * @return bool
+     */
+    public function increaseSales($productId) {
+        $sql = "UPDATE {$this->table} SET sales = sales + 1 WHERE id = ?";
+        return $this->execute($sql, [$productId]);
+    }
 }

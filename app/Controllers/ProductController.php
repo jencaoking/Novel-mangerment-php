@@ -98,9 +98,17 @@ class ProductController {
                 $message = '安全验证失败';
             } else {
                 try {
-                    $this->orderModel->createOrder(getCurrentUserId(), $productId, $product['price']);
-                    $message = '订单创建成功，请完成支付';
+                    // 创建订单
+                    $orderId = $this->orderModel->createOrder(getCurrentUserId(), $productId, $product['price']);
+                    
+                    if ($orderId) {
+                        // 直接跳转到支付宝支付页面
+                        redirect('/payment/pay/' . $orderId);
+                    } else {
+                        $message = '创建订单失败，请稍后再试';
+                    }
                 } catch (\Exception $e) {
+                    error_log('购买异常: ' . $e->getMessage());
                     $message = '创建订单失败，请稍后再试';
                 }
             }

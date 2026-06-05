@@ -66,7 +66,11 @@
                                         <span class="status-badge status-<?= getOrderStatusBadge($order['status']) ?>">
                                             <?= getOrderStatusText($order['status']) ?>
                                         </span>
-                                        <?php if ($order['status'] === 'paid'): ?>
+                                        <?php if ($order['status'] === 'pending'): ?>
+                                            <a href="/payment/pay/<?= $order['id'] ?>" class="btn btn-success btn-sm">
+                                                立即支付
+                                            </a>
+                                        <?php elseif ($order['status'] === 'paid'): ?>
                                             <a href="/download.php?id=<?= $order['product_id'] ?>" class="btn btn-primary btn-sm">
                                                 下载
                                             </a>

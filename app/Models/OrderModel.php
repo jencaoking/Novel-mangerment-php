@@ -167,4 +167,16 @@ class OrderModel extends BaseModel {
                 LIMIT ?";
         return $this->fetchAll($sql, [$userId, $limit]);
     }
+
+    /**
+     * 更新订单为已支付状态
+     * @param int $orderId 订单ID
+     * @param string $tradeNo 支付宝交易号
+     * @param string $payTime 支付时间
+     * @return bool
+     */
+    public function updateOrderPaid($orderId, $tradeNo, $payTime) {
+        $sql = "UPDATE {$this->table} SET status = 'paid', pay_time = ?, trade_no = ? WHERE id = ?";
+        return $this->execute($sql, [$payTime, $tradeNo, $orderId]);
+    }
 }

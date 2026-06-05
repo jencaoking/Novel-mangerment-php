@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 
+// 已登录用户直接跳转
+if (isLoggedIn() && isAdmin()) {
+    redirect('dashboard.php');
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,10 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $error = $result['message'];
     }
-}
-
-if (isLoggedIn() && isAdmin()) {
-    redirect('dashboard.php');
 }
 ?>
 <!DOCTYPE html>

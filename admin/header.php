@@ -63,7 +63,7 @@ require_once __DIR__ . '/../includes/auth.php';
                 </div>
                 <div class="topbar-right">
                     <div class="user-info">
-                        <span class="user-avatar"><?= substr($_SESSION['username'] ?? 'A', 0, 1) ?></span>
+                        <span class="user-avatar"><?= mb_substr($_SESSION['username'] ?? 'A', 0, 1, 'UTF-8') ?></span>
                         <span class="user-name"><?= e($_SESSION['username'] ?? '管理员') ?></span>
                     </div>
                     <a href="/logout.php" class="btn btn-sm btn-outline-danger">

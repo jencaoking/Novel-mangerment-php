@@ -104,7 +104,7 @@ $orderStats = $stmt->fetchAll();
                                 <td><?= e($order['order_no']) ?></td>
                                 <td><?= e($order['username'] ?? '未知') ?></td>
                                 <td><?= e($order['title'] ?? '未知商品') ?></td>
-                                <td><?= formatPrice($order['amount']) ?></td>
+                                <td><?= formatPrice($order['price']) ?></td>
                                 <td>
                                     <span class="badge bg-<?= getOrderStatusBadge($order['status']) ?>">
                                         <?= getOrderStatusText($order['status']) ?>

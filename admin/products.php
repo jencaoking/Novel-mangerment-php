@@ -40,20 +40,40 @@ $categories = $stmt->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    
+
+    // CSRF 验证
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('CSRF 验证失败');
+    }
+
     if ($action === 'delete' && isset($_POST['product_id'])) {
         $productId = (int)$_POST['product_id'];
-        $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
+
+        // 1. 查询文件路径
+        $stmt = $db->prepare("SELECT cover, file_path, preview_path, type FROM products WHERE id = ?");
         $stmt->execute([$productId]);
+        $product = $stmt->fetch();
+
+        if ($product) {
+            // 2. 删除物理文件
+            $baseDir = UPLOAD_PATH;
+            if ($product['cover']) @unlink($baseDir . 'cover/' . $product['cover']);
+            if ($product['file_path']) @unlink($baseDir . ($product['type'] === 'novel' ? 'novels/' : 'music/') . $product['file_path']);
+            if ($product['preview_path']) @unlink($baseDir . 'preview/' . $product['preview_path']);
+
+            // 3. 删除数据库记录
+            $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
+            $stmt->execute([$productId]);
+        }
         redirect('products.php');
     }
-    
+
     if ($action === 'toggle_status' && isset($_POST['product_id'])) {
         $productId = (int)$_POST['product_id'];
         $stmt = $db->prepare("SELECT status FROM products WHERE id = ?");
         $stmt->execute([$productId]);
         $product = $stmt->fetch();
-        
+
         if ($product) {
             $newStatus = $product['status'] == 1 ? 0 : 1;
             $stmt = $db->prepare("UPDATE products SET status = ? WHERE id = ?");
@@ -138,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </td>
                         <td>
                             <form method="POST" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                 <input type="hidden" name="action" value="toggle_status">
                                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-warning">
@@ -145,6 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </button>
                             </form>
                             <form method="POST" style="display: inline;" onsubmit="return confirm('确定要删除吗？');">
+                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -163,23 +185,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <ul class="pagination justify-content-center mb-0">
                     <?php if ($pagination['has_previous']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= $type ? '&type=' . $type : '' ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] - 1; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                     <?php endif; ?>
-                    
+
                     <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                         <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?><?= $type ? '&type=' . $type : '' ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $i; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <?= $i ?>
                             </a>
                         </li>
                     <?php endfor; ?>
-                    
+
                     <?php if ($pagination['has_next']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= $type ? '&type=' . $type : '' ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] + 1; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>

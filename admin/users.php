@@ -32,13 +32,22 @@ $users = $stmt->fetchAll();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $userId = $_POST['user_id'] ?? 0;
-    
+
+    // CSRF 验证
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('CSRF 验证失败');
+    }
+
     if ($action === 'toggle_status' && $userId) {
-        $stmt = $db->prepare("SELECT status FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT role, status FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $user = $stmt->fetch();
-        
+
         if ($user) {
+            // 禁止修改管理员状态
+            if ($user['role'] === 'admin') {
+                die('无法修改管理员状态');
+            }
             $newStatus = $user['status'] == 1 ? 0 : 1;
             $stmt = $db->prepare("UPDATE users SET status = ? WHERE id = ?");
             $stmt->execute([$newStatus, $userId]);
@@ -105,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td>
                             <?php if ($user['role'] !== 'admin'): ?>
                                 <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                     <input type="hidden" name="action" value="toggle_status">
                                     <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-warning">
@@ -125,23 +135,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <ul class="pagination justify-content-center mb-0">
                     <?php if ($pagination['has_previous']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] - 1; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                     <?php endif; ?>
-                    
+
                     <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                         <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $i; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <?= $i ?>
                             </a>
                         </li>
                     <?php endfor; ?>
-                    
+
                     <?php if ($pagination['has_next']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= $search ? '&search=' . urlencode($search) : '' ?>">
+                            <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] + 1; ?>
+                            <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>

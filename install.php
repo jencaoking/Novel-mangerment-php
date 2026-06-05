@@ -3,6 +3,8 @@
  * 数据库初始化安装脚本 - 独立版本
  */
 
+define('INSTALL_SCRIPT', true);
+
 // 检查是否已安装
 if (file_exists(__DIR__ . '/install.lock')) {
     die('系统已安装！如需重新安装，请先删除 install.lock 文件。');
@@ -17,16 +19,23 @@ if (!file_exists($configPath)) {
 // 引入配置文件
 require_once $configPath;
 
+// 引入认证函数（用于CSRF保护）
+require_once __DIR__ . '/includes/auth.php';
+
 // 检查是否已提交表单
 $isInstalled = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $adminPassword = trim($_POST['admin_password'] ?? '');
-    $adminPasswordConfirm = trim($_POST['admin_password_confirm'] ?? '');
-    
-    // 验证密码
-    if (empty($adminPassword)) {
+    // CSRF验证
+    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+        $error = '安全验证失败，请刷新页面重试';
+    } else {
+        $adminPassword = trim($_POST['admin_password'] ?? '');
+        $adminPasswordConfirm = trim($_POST['admin_password_confirm'] ?? '');
+        
+        // 验证密码
+        if (empty($adminPassword)) {
         $error = '请输入管理员密码';
     } elseif (strlen($adminPassword) < 6) {
         $error = '管理员密码至少需要6个字符';
@@ -83,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "数据库安装失败: " . $e->getMessage();
         } catch (Exception $e) {
             $error = "安装失败: " . $e->getMessage();
+        }
         }
     }
 }
@@ -226,6 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="admin_password_confirm">确认密码</label>
                     <input type="password" id="admin_password_confirm" name="admin_password_confirm" required placeholder="请再次输入密码">
                 </div>
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <button type="submit">开始安装</button>
             </form>
         <?php endif; ?>

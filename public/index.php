@@ -55,6 +55,8 @@ try {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $router->dispatch($uri, $method);
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "<br>";
-    echo "Stack trace: " . $e->getTraceAsString();
+    error_log("Application error: " . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
+    http_response_code(500);
+    echo "<h1>服务器内部错误</h1>";
+    echo "<p>抱歉，服务器遇到了一个内部错误，请稍后重试。</p>";
 }

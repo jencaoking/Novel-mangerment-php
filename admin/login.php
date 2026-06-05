@@ -9,20 +9,24 @@ if (isLoggedIn() && isAdmin()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-    
-    $result = login($username, $password);
-    
-    if ($result['success']) {
-        if (isAdmin()) {
-            redirect('dashboard.php');
-        } else {
-            logout();
-            $error = '您没有管理员权限';
-        }
+    if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+        $error = '安全验证失败，请刷新页面重试';
     } else {
-        $error = $result['message'];
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+        
+        $result = login($username, $password);
+    
+        if ($result['success']) {
+            if (isAdmin()) {
+                redirect('dashboard.php');
+            } else {
+                logout();
+                $error = '您没有管理员权限';
+            }
+        } else {
+            $error = $result['message'];
+        }
     }
 }
 ?>
@@ -69,6 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="bi bi-lock"></i> 密码
                     </label>
                 </div>
+                
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 
                 <button type="submit" class="btn btn-primary w-100 btn-lg">
                     <i class="bi bi-box-arrow-in-right"></i> 登录

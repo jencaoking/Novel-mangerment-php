@@ -237,6 +237,7 @@ function requireLogin() {
  */
 function requireAdmin() {
     if (!isLoggedIn() || !isAdmin()) {
+        $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'] ?? '/admin/dashboard';
         redirect('/admin/login.php');
     }
 }

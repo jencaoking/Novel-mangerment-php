@@ -35,3 +35,22 @@ ini_set('display_errors', 1);
 ini_set('session.name', SESSION_NAME);
 ini_set('session.cookie_lifetime', SESSION_LIFETIME);
 ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.use_only_cookies', 1);
+session_cache_limiter('nocache');
+
+function setSecurityHeaders() {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    header('Content-Security-Policy: default-src \'self\'; script-src \'self\' \'unsafe-inline\' https://cdn.jsdelivr.net; style-src \'self\' \'unsafe-inline\' https://cdn.jsdelivr.net; img-src \'self\' data: https:; font-src \'self\' https://cdn.jsdelivr.net; object-src \'none\'; frame-src \'none\'; upgrade-insecure-requests');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()');
+}
+
+if (!defined('INSTALL_SCRIPT')) {
+    setSecurityHeaders();
+}

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initAnimations();
     initProductCards();
     initFormValidation();
-    initSearch();
+    // initSearch(); // 已禁用：使用表单搜索代替 AJAX 搜索
     lazyLoadImages();
 });
 

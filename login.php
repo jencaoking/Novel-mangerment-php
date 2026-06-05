@@ -30,10 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = login($username, $password, $remember);
             
             if ($result['success']) {
-                // 登录成功，重定向到首页或之前的页面
-                $redirectUrl = $_SESSION['redirect_url'] ?? '/';
+                // 登录成功，重定向到合适的页面
+                $redirectUrl = $_SESSION['redirect_url'] ?? null;
                 unset($_SESSION['redirect_url']);
-                redirect($redirectUrl);
+                
+                // 如果是管理员且没有指定重定向，优先跳转到后台
+                if (!$redirectUrl && $result['user']['role'] === 'admin') {
+                    redirect('/admin/dashboard.php');
+                }
+                
+                redirect($redirectUrl ?? '/');
             } else {
                 $error = $result['message'];
             }

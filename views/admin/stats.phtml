@@ -1,0 +1,59 @@
+<?php $currentPage = 'stats'; $pageTitle = '数据统计'; ?>
+<?php include __DIR__ . '/_header.phtml'; ?>
+
+<div class="page-header">
+    <h1 class="page-title">数据统计</h1>
+    <p class="page-description">详细的业务数据分析</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">销售统计图表</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statsChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const statsCtx = document.getElementById('statsChart');
+if (statsCtx) {
+    new Chart(statsCtx, {
+        type: 'bar',
+        data: {
+            labels: ['一月', '二月', '三月', '四月', '五月', '六月'],
+            datasets: [
+                {
+                    label: '销售额',
+                    data: [12000, 19000, 15000, 25000, 22000, 30000],
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: '#0d6efd',
+                    borderWidth: 1
+                },
+                {
+                    label: '订单数',
+                    data: [120, 190, 150, 250, 220, 300],
+                    backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                    borderColor: '#198754',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+</script>
+
+<?php include __DIR__ . '/_footer.phtml'; ?>

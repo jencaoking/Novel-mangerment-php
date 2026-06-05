@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= isset($pageTitle) ? $pageTitle . ' - ' : '' ?>后台管理 - BookMusic Mall</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <i class="bi bi-music-note-beamed"></i>
+                    <span>BookMusic Admin</span>
+                </div>
+            </div>
+            <ul class="sidebar-nav">
+                <li class="nav-item">
+                    <a href="/admin/dashboard" class="nav-link <?= isset($currentPage) && $currentPage === 'dashboard' ? 'active' : '' ?>">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>仪表盘</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/products" class="nav-link <?= isset($currentPage) && $currentPage === 'products' ? 'active' : '' ?>">
+                        <i class="bi bi-box-seam"></i>
+                        <span>商品管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/users" class="nav-link <?= isset($currentPage) && $currentPage === 'users' ? 'active' : '' ?>">
+                        <i class="bi bi-people"></i>
+                        <span>用户管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/orders" class="nav-link <?= isset($currentPage) && $currentPage === 'orders' ? 'active' : '' ?>">
+                        <i class="bi bi-cart-check"></i>
+                        <span>订单管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/admin/stats" class="nav-link <?= isset($currentPage) && $currentPage === 'stats' ? 'active' : '' ?>">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>数据统计</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-info">
+                        <span class="user-avatar"><?= mb_substr($_SESSION['username'] ?? 'A', 0, 1, 'UTF-8') ?></span>
+                        <span class="user-name"><?= e($_SESSION['username'] ?? '管理员') ?></span>
+                    </div>
+                    <a href="/logout" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-box-arrow-right"></i> 退出
+                    </a>
+                </div>
+            </header>
+
+            <div class="content">

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的下载 - BookMusic Mall</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="/" class="navbar-brand">
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 2C10.06 2 2 10.06 2 20s8.06 18 18 18 18-8.06 18-18S29.94 2 20 2zm0 4c7.73 0 14 6.27 14 14s-6.27 14-14 14S6 25.73 6 20 12.27 6 20 6zm-4 6v16l12-8-12-8z"/>
+                    </svg>
+                    <span>BookMusic Mall</span>
+                </a>
+                <ul class="navbar-nav">
+                    <li><a href="/">首页</a></li>
+                    <li><a href="/novels">小说</a></li>
+                    <li><a href="/music">音乐</a></li>
+                </ul>
+                <div class="navbar-actions">
+                    <a href="/user/profile" class="btn btn-secondary">用户中心</a>
+                    <a href="/logout" class="btn btn-outline">退出</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="user-center">
+        <div class="container">
+            <div class="user-layout">
+                <div class="user-sidebar">
+                    <div class="user-info">
+                        <img src="/uploads/avatar/<?= e($user['avatar'] ?: 'default.jpg') ?>" 
+                             alt="<?= e($user['username']) ?>" class="user-avatar">
+                        <h3><?= e($user['username']) ?></h3>
+                        <p><?= e($user['email']) ?></p>
+                    </div>
+                    <nav class="user-nav">
+                        <a href="/user/orders">我的订单</a>
+                        <a href="/user/profile">个人资料</a>
+                        <a href="/user/downloads" class="active">我的下载</a>
+                    </nav>
+                </div>
+                
+                <div class="user-content">
+                    <h1>我的下载</h1>
+                    
+                    <?php if (empty($purchasedProducts)): ?>
+                        <p class="empty-message">暂无已购买的商品</p>
+                    <?php else: ?>
+                        <div class="downloads-list">
+                            <?php foreach ($purchasedProducts as $product): ?>
+                                <div class="download-card">
+                                    <img src="/uploads/cover/<?= e($product['cover']) ?>" alt="<?= e($product['title']) ?>">
+                                    <div class="download-details">
+                                        <h3><?= e($product['title']) ?></h3>
+                                        <p><?= $product['type'] === 'novel' ? '作者' : '歌手' ?>：<?= e($product['author']) ?></p>
+                                        <p>购买时间：<?= timeAgo($product['pay_time']) ?></p>
+                                    </div>
+                                    <div class="download-actions">
+                                        <a href="/download.php?id=<?= $product['product_id'] ?>" class="btn btn-primary">
+                                            下载
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="/assets/js/main.js"></script>
+    <style>
+        .user-center { padding-top: 100px; min-height: calc(100vh - 80px); }
+        .user-layout { display: grid; grid-template-columns: 250px 1fr; gap: var(--spacing-2xl); }
+        .user-sidebar { position: sticky; top: 100px; height: fit-content; }
+        .user-info { text-align: center; padding: var(--spacing-xl); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); margin-bottom: var(--spacing-lg); }
+        .user-avatar { width: 100px; height: 100px; border-radius: 50%; margin-bottom: var(--spacing-md); }
+        .user-nav { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: var(--spacing-md); }
+        .user-nav a { display: block; padding: var(--spacing-md); color: var(--gray-700); border-radius: var(--radius-md); transition: all var(--transition-fast); }
+        .user-nav a:hover, .user-nav a.active { background: var(--accent-light); color: var(--accent-dark); }
+        .user-content { background: var(--white); padding: var(--spacing-2xl); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+        .empty-message { text-align: center; color: var(--gray-500); padding: var(--spacing-2xl); }
+        .downloads-list { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+        .download-card { display: flex; gap: var(--spacing-lg); padding: var(--spacing-lg); background: var(--gray-50); border-radius: var(--radius-md); }
+        .download-card img { width: 100px; height: 100px; object-fit: cover; border-radius: var(--radius-sm); }
+        .download-details { flex: 1; }
+        .download-details h3 { margin-bottom: var(--spacing-sm); }
+        .download-details p { margin: var(--spacing-xs) 0; color: var(--gray-600); }
+        .download-actions { display: flex; align-items: center; }
+        @media (max-width: 768px) { .user-layout { grid-template-columns: 1fr; } .download-card { flex-direction: column; } }
+    </style>
+</body>
+</html>

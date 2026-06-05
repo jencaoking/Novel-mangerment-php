@@ -22,9 +22,7 @@ $total = $countStmt->fetchColumn();
 
 $pagination = paginate($total, $page, 20);
 
-$stmt = $db->prepare("SELECT o.*, p.title as product_title, u.username, u.email FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id WHERE $where ORDER BY o.create_time DESC LIMIT ? OFFSET ?");
-$params[] = $pagination['per_page'];
-$params[] = $pagination['offset'];
+$stmt = $db->prepare("SELECT o.*, p.title as product_title, u.username, u.email FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id WHERE $where ORDER BY o.create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}");
 $stmt->execute($params);
 $orders = $stmt->fetchAll();
 
@@ -33,6 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $orderId = $_POST['order_id'] ?? 0;
     
     if ($action === 'update_status' && $orderId) {
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            die('安全验证失败');
+        }
         $newStatus = $_POST['status'] ?? '';
         $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
         $stmt->execute([$newStatus, $orderId]);
@@ -102,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?= e($order['create_time']) ?></td>
                         <td>
                             <form method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                 <input type="hidden" name="action" value="update_status">
                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                                 <select name="status" class="form-select form-select-sm d-inline" style="width: auto;" onchange="this.form.submit()">

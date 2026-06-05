@@ -5,6 +5,9 @@ requireAdmin();
 $db = getDB();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('非法请求：CSRF Token 无效');
+    }
     $action = $_POST['action'] ?? '';
     
     if ($action === 'add_product') {
@@ -39,20 +42,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         
-        $stmt = $db->prepare("INSERT INTO products (title, type, category_id, author, description, cover, file_path, preview_path, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $title,
-            $type,
-            $categoryId,
-            $author,
-            $description,
-            $coverResult['filename'],
-            $fileResult['filename'],
-            $previewPath,
-            $price
-        ]);
-        
-        redirect('products.php');
+        try {
+            $stmt = $db->prepare("INSERT INTO products (title, type, category_id, author, description, cover, file_path, preview_path, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $title,
+                $type,
+                $categoryId,
+                $author,
+                $description,
+                $coverResult['filename'],
+                $fileResult['filename'],
+                $previewPath,
+                $price
+            ]);
+            redirect('products.php');
+        } catch (PDOException $e) {
+            @unlink($uploadDir . 'cover/' . $coverResult['filename']);
+            @unlink($uploadDir . $fileDir . $fileResult['filename']);
+            if ($previewPath) @unlink($uploadDir . 'preview/' . $previewPath);
+            die('保存到数据库失败，请检查输入格式。');
+        }
     }
 }
 

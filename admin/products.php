@@ -29,9 +29,7 @@ $total = $countStmt->fetchColumn();
 
 $pagination = paginate($total, $page, 20);
 
-$stmt = $db->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE $where ORDER BY p.create_time DESC LIMIT ? OFFSET ?");
-$params[] = $pagination['per_page'];
-$params[] = $pagination['offset'];
+$stmt = $db->prepare("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE $where ORDER BY p.create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}");
 $stmt->execute($params);
 $products = $stmt->fetchAll();
 
@@ -224,6 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="modal-body">
                 <form action="upload.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     <input type="hidden" name="action" value="add_product">
                     <div class="mb-3">
                         <label class="form-label">商品类型</label>
@@ -239,8 +238,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="mb-3">
                         <label class="form-label">分类</label>
                         <select name="category_id" class="form-select" required>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= $cat['id'] ?>"><?= e($cat['name']) ?> (<?= getProductTypeText($cat['type']) ?>)</option>
+                            <?php 
+                            $groupedCategories = [];
+                            foreach ($categories as $cat) {
+                                $groupedCategories[$cat['type']][] = $cat;
+                            }
+                            foreach ($groupedCategories as $type => $cats): 
+                            ?>
+                                <optgroup label="<?= getProductTypeText($type) ?>">
+                                    <?php foreach ($cats as $cat): ?>
+                                        <option value="<?= $cat['id'] ?>"><?= e($cat['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
                             <?php endforeach; ?>
                         </select>
                     </div>

@@ -23,9 +23,7 @@ $total = $countStmt->fetchColumn();
 
 $pagination = paginate($total, $page, 20);
 
-$stmt = $db->prepare("SELECT * FROM users WHERE $where ORDER BY create_time DESC LIMIT ? OFFSET ?");
-$params[] = $pagination['per_page'];
-$params[] = $pagination['offset'];
+$stmt = $db->prepare("SELECT * FROM users WHERE $where ORDER BY create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}");
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 

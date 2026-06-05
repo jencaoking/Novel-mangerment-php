@@ -1,4 +1,9 @@
 <?php
+require_once '../vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
 require_once '../core/Autoloader.php';
 require_once '../includes/config.php';
 require_once '../includes/db.php';

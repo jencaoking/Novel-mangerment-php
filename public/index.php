@@ -4,6 +4,23 @@ require_once '../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
+// ==========================================
+// 🛡️ Sentry 错误监控初始化
+// ==========================================
+if (defined('SENTRY_DSN') && !empty(SENTRY_DSN)) {
+    \Sentry\init([
+        'dsn' => SENTRY_DSN,
+        'environment' => SENTRY_ENVIRONMENT,
+        // 指定固定的采样率
+        'traces_sample_rate' => 1.0,
+        // 设置性能分析的采样率 - 相对于 traces_sample_rate
+        'profiles_sample_rate' => 1.0,
+        // 启用日志发送到 Sentry
+        'enable_logs' => true,
+    ]);
+}
+// ==========================================
+
 require_once '../core/Autoloader.php';
 require_once '../includes/config.php';
 require_once '../includes/db.php';
@@ -33,6 +50,11 @@ set_exception_handler(function ($exception) {
         $exception->getLine()
     );
     error_log($logMessage, 3, $logDir . '/error.log');
+    
+    // 如果 Sentry 已初始化，则发送异常到 Sentry
+    if (defined('SENTRY_DSN') && !empty(SENTRY_DSN) && class_exists('\Sentry\State\Hub')) {
+        \Sentry\captureException($exception);
+    }
 
     // 清空可能已经输出的半截 HTML
     if (ob_get_length()) ob_clean();

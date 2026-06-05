@@ -5,7 +5,8 @@
     "require": {
         "php": ">=7.4",
         "vlucas/phpdotenv": "^5.5",
-        "resend/resend-php": "*"
+        "resend/resend-php": "*",
+        "sentry/sentry": "^4.0"
     },
     "autoload": {
         "psr-4": {

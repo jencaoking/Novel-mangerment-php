@@ -15,6 +15,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 - ✅ 文件下载权限管理
 - ✅ 用户中心（个人资料、订单管理、下载记录）
 - ✅ **邮件通知服务（Resend API 集成）**
+- ✅ **错误监控与性能追踪（Sentry 集成）**
 
 ### 管理功能
 - ✅ 管理员登录
@@ -32,6 +33,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 - ✅ 高质量前端设计（现代极简主义风格）
 - ✅ MVC 架构设计
 - ✅ 自动加载机制
+- ✅ **实时错误监控（Sentry）**
 
 ## 技术栈
 
@@ -253,4 +255,5 @@ bookmusic/
 **相关文档：**
 - [支付宝支付集成说明](PAYMENT_README.md)
 - [Resend 邮件服务集成指南](RESEND_README.md)
+- [Sentry 错误监控集成指南](SENTRY_INTEGRATION.md)
 - [项目计划与功能清单](Plan.md)

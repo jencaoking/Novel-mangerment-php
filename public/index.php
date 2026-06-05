@@ -22,7 +22,7 @@ set_exception_handler(function ($exception) {
     // 将详细错误写入日志文件 (logs/error.log)
     $logDir = __DIR__ . '/../logs';
     if (!is_dir($logDir)) {
-        mkdir($logDir, 0777, true);
+        mkdir($logDir, 0755, true);
     }
     
     $logMessage = sprintf(

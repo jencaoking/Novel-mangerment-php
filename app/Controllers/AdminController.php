@@ -168,10 +168,97 @@ class AdminController
 
     public function upload()
     {
-        global $db;
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            require __DIR__ . '/../../admin/upload.php';
+        // 只接受 POST 请求
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/products');
+            return;
         }
+
+        // 1. CSRF 校验
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            die('非法请求：CSRF Token 无效');
+        }
+
+        global $db;
+        $action = $_POST['action'] ?? '';
+
+        // 2. 处理添加商品
+        if ($action === 'add_product') {
+            $type = $_POST['type'] ?? '';
+            $title = $_POST['title'] ?? '';
+            $categoryId = (int)($_POST['category_id'] ?? 0);
+            $author = $_POST['author'] ?? '';
+            $description = $_POST['description'] ?? '';
+            $price = (float)($_POST['price'] ?? 0);
+
+            $uploadDir = UPLOAD_PATH;
+            $coverResult = null;
+            $fileResult = null;
+            $previewPath = null;
+
+            try {
+                // 3. 上传封面图片
+                $coverResult = uploadFile($_FILES['cover'], $uploadDir . 'cover/', ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
+                if (!$coverResult['success']) {
+                    throw new \Exception('封面上传失败: ' . $coverResult['message']);
+                }
+
+                // 4. 上传商品文件（小说或音乐）
+                $fileDir = $type === 'novel' ? 'novels/' : 'music/';
+                $fileTypes = $type === 'novel' ? ALLOWED_NOVEL_TYPES : ALLOWED_MUSIC_TYPES;
+                $maxSize = $type === 'novel' ? MAX_NOVEL_SIZE : MAX_MUSIC_SIZE;
+
+                $fileResult = uploadFile($_FILES['file'], $uploadDir . $fileDir, $fileTypes, $maxSize);
+                if (!$fileResult['success']) {
+                    throw new \Exception('文件上传失败: ' . $fileResult['message']);
+                }
+
+                // 5. 上传预览文件（仅音乐类型）
+                if ($type === 'music' && isset($_FILES['preview']) && $_FILES['preview']['error'] === UPLOAD_ERR_OK) {
+                    $previewResult = uploadFile($_FILES['preview'], $uploadDir . 'preview/', ['mp3'], MAX_MUSIC_SIZE);
+                    if ($previewResult['success']) {
+                        $previewPath = $previewResult['filename'];
+                    }
+                }
+
+                // 6. 插入数据库
+                $stmt = $db->prepare("
+                    INSERT INTO products (title, type, category_id, author, description, cover, file_path, preview_path, price) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([
+                    $title,
+                    $type,
+                    $categoryId,
+                    $author,
+                    $description,
+                    $coverResult['filename'],
+                    $fileResult['filename'],
+                    $previewPath,
+                    $price
+                ]);
+
+                // 7. 成功重定向
+                redirect('/admin/products?success=1');
+
+            } catch (\Exception $e) {
+                // 8. 发生错误时，清理已上传的文件（防止垃圾文件残留）
+                if ($coverResult && isset($coverResult['filename'])) {
+                    @unlink($uploadDir . 'cover/' . $coverResult['filename']);
+                }
+                if ($fileResult && isset($fileResult['filename'])) {
+                    @unlink($uploadDir . $fileDir . $fileResult['filename']);
+                }
+                if ($previewPath) {
+                    @unlink($uploadDir . 'preview/' . $previewPath);
+                }
+
+                // 输出错误信息（建议后续将错误存入 Session 后重定向）
+                die('添加商品失败: ' . $e->getMessage());
+            }
+        }
+
+        // 其他 action 或默认重定向
+        redirect('/admin/products');
     }
 }

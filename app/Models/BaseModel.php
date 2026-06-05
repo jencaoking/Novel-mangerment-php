@@ -107,10 +107,9 @@ class BaseModel {
         }
         
         $sql = "UPDATE {$this->table} SET " . implode(", ", $updateParts) . " WHERE {$this->primaryKey} = :id";
-        $data['id'] = $id;
         
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($data);
+        return $stmt->execute(array_merge($data, [':id' => $id]));
     }
 
     public function delete($id) {

@@ -7,7 +7,7 @@ class OrderModel extends BaseModel {
     protected $fillable = ['order_no', 'user_id', 'product_id', 'price', 'status', 'pay_time', 'cancel_time', 'refund_time', 'refund_reason'];
 
     public function createOrder($userId, $productId, $price) {
-        $orderNo = date('YmdHis') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        $orderNo = date('YmdHis') . substr(uniqid(), -6);
         $data = [
             'order_no' => $orderNo,
             'user_id' => $userId,

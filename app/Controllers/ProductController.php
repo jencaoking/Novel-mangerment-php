@@ -48,7 +48,7 @@ class ProductController {
         $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
         $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
 
-        $pagination = paginate($total, $page);
+        $pagination = paginate($total, $page, 12);
 
         $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
         $novels = $this->productModel->fetchAll($sql, $params);
@@ -89,7 +89,7 @@ class ProductController {
         $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
         $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
 
-        $pagination = paginate($total, $page);
+        $pagination = paginate($total, $page, 12);
 
         $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
         $music = $this->productModel->fetchAll($sql, $params);
@@ -143,7 +143,7 @@ class ProductController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buy'])) {
             if (!isLoggedIn()) {
                 $_SESSION['redirect_url'] = "/product/{$productId}";
-                redirect('/login.php');
+                redirect('/login');
             }
             
             if ($hasPurchased) {

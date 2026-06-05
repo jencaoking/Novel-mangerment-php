@@ -49,7 +49,7 @@ class AdminController
         $type = $_GET['type'] ?? '';
         $search = $_GET['search'] ?? '';
 
-        $where = 'p.status = 1';
+        $where = '1=1';
         $params = [];
 
         if ($type) {
@@ -119,6 +119,13 @@ class AdminController
                         $_SESSION['error'] = '无法修改管理员状态';
                         redirect('/admin/users');
                     }
+                    
+                    $currentUserId = getCurrentUserId();
+                    if ($userId == $currentUserId) {
+                        $_SESSION['error'] = '无法修改自己的状态';
+                        redirect('/admin/users');
+                    }
+                    
                     $this->userModel->toggleStatus($userId);
                 }
             }

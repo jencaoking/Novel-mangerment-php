@@ -77,23 +77,23 @@ try {
     // ==========================================
     // 3. 用户中心路由（需要普通登录权限）
     // ==========================================
-    $router->get('/user', 'UserController@index');
-    $router->get('/user/profile', 'UserController@profile');
-    $router->post('/user/profile', 'UserController@updateProfile');
-    $router->get('/user/orders', 'UserController@orders');
-    $router->get('/user/downloads', 'UserController@downloads');
+    $router->get('/user', 'UserController@index', ['AuthMiddleware']);
+    $router->get('/user/profile', 'UserController@profile', ['AuthMiddleware']);
+    $router->post('/user/profile', 'UserController@updateProfile', ['AuthMiddleware']);
+    $router->get('/user/orders', 'UserController@orders', ['AuthMiddleware']);
+    $router->get('/user/downloads', 'UserController@downloads', ['AuthMiddleware']);
     
     // ==========================================
     // 4. 后台管理路由（需要管理员权限）
     // ==========================================
-    $router->get('/admin/dashboard', 'AdminController@dashboard');
-    $router->get('/admin/products', 'AdminController@products');
-    $router->get('/admin/users', 'AdminController@users');
-    $router->post('/admin/users', 'AdminController@toggleUserStatus');
-    $router->get('/admin/orders', 'AdminController@orders');
-    $router->post('/admin/orders/update', 'AdminController@updateOrderStatus');
-    $router->get('/admin/stats', 'AdminController@stats');
-    $router->post('/admin/upload', 'AdminController@upload');
+    $router->get('/admin/dashboard', 'AdminController@dashboard', ['AdminMiddleware']);
+    $router->get('/admin/products', 'AdminController@products', ['AdminMiddleware']);
+    $router->get('/admin/users', 'AdminController@users', ['AdminMiddleware']);
+    $router->post('/admin/users', 'AdminController@toggleUserStatus', ['AdminMiddleware']);
+    $router->get('/admin/orders', 'AdminController@orders', ['AdminMiddleware']);
+    $router->post('/admin/orders/update', 'AdminController@updateOrderStatus', ['AdminMiddleware']);
+    $router->get('/admin/stats', 'AdminController@stats', ['AdminMiddleware']);
+    $router->post('/admin/upload', 'AdminController@upload', ['AdminMiddleware']);
     
     // 启动路由
     $uri = $_SERVER['REQUEST_URI'] ?? '/';

@@ -17,7 +17,6 @@ class AdminController
 
     public function __construct()
     {
-        requireAdmin();
         $this->userModel = new UserModel();
         $this->productModel = new ProductModel();
         $this->orderModel = new OrderModel();

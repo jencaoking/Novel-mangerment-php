@@ -11,7 +11,6 @@ class UserController
 
     public function __construct()
     {
-        requireLogin();
         $this->userModel = new UserModel();
         $this->orderModel = new OrderModel();
     }

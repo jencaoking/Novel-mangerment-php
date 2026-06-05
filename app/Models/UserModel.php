@@ -66,4 +66,10 @@ class UserModel extends BaseModel {
         $sql = "SELECT id FROM {$this->table} WHERE email = ?";
         return $this->fetch($sql, [$email]) !== false;
     }
+
+    public function getTotalSpent($userId) {
+        $sql = "SELECT COALESCE(SUM(price), 0) as total FROM orders WHERE user_id = ? AND status = 'paid'";
+        $result = $this->fetch($sql, [$userId]);
+        return $result['total'];
+    }
 }

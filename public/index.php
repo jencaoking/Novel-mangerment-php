@@ -34,6 +34,7 @@ try {
     // ==========================================
     // 3. 用户中心路由（需要普通登录权限）
     // ==========================================
+    $router->get('/user', 'UserController@index');
     $router->get('/user/profile', 'UserController@profile');
     $router->post('/user/profile', 'UserController@updateProfile');
     $router->get('/user/orders', 'UserController@orders');
@@ -47,6 +48,7 @@ try {
     $router->get('/admin/users', 'AdminController@users');
     $router->post('/admin/users', 'AdminController@toggleUserStatus');
     $router->get('/admin/orders', 'AdminController@orders');
+    $router->post('/admin/orders/update', 'AdminController@updateOrderStatus');
     $router->get('/admin/stats', 'AdminController@stats');
     $router->post('/admin/upload', 'AdminController@upload');
     

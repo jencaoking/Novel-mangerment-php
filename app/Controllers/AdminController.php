@@ -159,6 +159,47 @@ class AdminController
         require __DIR__ . '/../../views/admin/orders.phtml';
     }
 
+    public function updateOrderStatus()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/orders');
+            return;
+        }
+
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'CSRF 验证失败';
+            redirect('/admin/orders');
+            return;
+        }
+
+        $action = $_POST['action'] ?? '';
+        $orderId = (int)($_POST['order_id'] ?? 0);
+
+        if ($action !== 'update_status' || $orderId <= 0) {
+            redirect('/admin/orders');
+            return;
+        }
+
+        $newStatus = $_POST['status'] ?? '';
+        $allowedStatus = ['pending', 'paid', 'completed', 'cancelled'];
+
+        if (!in_array($newStatus, $allowedStatus)) {
+            $_SESSION['error'] = '非法状态值';
+            redirect('/admin/orders');
+            return;
+        }
+
+        $this->orderModel->updateStatus($orderId, $newStatus);
+
+        $currentStatus = $_GET['status'] ?? '';
+        $redirectUrl = '/admin/orders';
+        if ($currentStatus) {
+            $redirectUrl .= '?status=' . urlencode($currentStatus);
+        }
+
+        redirect($redirectUrl);
+    }
+
     public function stats()
     {
         require __DIR__ . '/../../views/admin/stats.phtml';

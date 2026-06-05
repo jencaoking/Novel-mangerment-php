@@ -1,4 +1,8 @@
 <?php
+// ================================================
+// DEPRECATED - 此文件已废弃
+// 请使用 MVC 路由: /admin/orders
+// ================================================
 $pageTitle = '订单管理';
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();

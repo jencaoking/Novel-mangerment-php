@@ -60,7 +60,7 @@
                     </td>
                     <td><?= e($order['create_time']) ?></td>
                     <td>
-                        <form method="POST" class="d-inline">
+                        <form method="POST" action="/admin/orders/update" class="d-inline">
                             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="order_id" value="<?= $order['id'] ?>">

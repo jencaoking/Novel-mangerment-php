@@ -3,6 +3,11 @@
  * 数据库初始化安装脚本 - 独立版本
  */
 
+// 检查是否已安装
+if (file_exists(__DIR__ . '/install.lock')) {
+    die('系统已安装！如需重新安装，请先删除 install.lock 文件。');
+}
+
 // 检查配置文件是否存在
 $configPath = __DIR__ . '/includes/config.php';
 if (!file_exists($configPath)) {
@@ -38,102 +43,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             
-            // 用户表
-            $pdo->exec("CREATE TABLE IF NOT EXISTS users (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                avatar VARCHAR(255) DEFAULT NULL,
-                role ENUM('user', 'admin') DEFAULT 'user',
-                status TINYINT DEFAULT 1 COMMENT '1-正常 0-封禁',
-                last_login DATETIME DEFAULT NULL,
-                create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            // 读取 database.sql 文件
+            $sqlFile = __DIR__ . '/database.sql';
+            if (!file_exists($sqlFile)) {
+                throw new Exception("数据库初始化脚本 database.sql 不存在");
+            }
             
-            // 分类表
-            $pdo->exec("CREATE TABLE IF NOT EXISTS categories (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                name VARCHAR(50) NOT NULL UNIQUE,
-                type ENUM('novel', 'music') NOT NULL COMMENT '小说分类/音乐分类',
-                sort_order INT DEFAULT 0,
-                status TINYINT DEFAULT 1,
-                create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $sqlContent = file_get_contents($sqlFile);
             
-            // 商品表
-            $pdo->exec("CREATE TABLE IF NOT EXISTS products (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                title VARCHAR(255) NOT NULL,
-                type ENUM('novel', 'music') NOT NULL COMMENT '小说/音乐',
-                category_id INT NOT NULL,
-                author VARCHAR(100) DEFAULT NULL COMMENT '作者/歌手',
-                description TEXT DEFAULT NULL,
-                cover VARCHAR(255) NOT NULL,
-                file_path VARCHAR(255) NOT NULL,
-                preview_path VARCHAR(255) DEFAULT NULL COMMENT '音乐试听路径',
-                price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-                downloads INT DEFAULT 0,
-                sales INT DEFAULT 0,
-                status TINYINT DEFAULT 1 COMMENT '1-上架 0-下架',
-                create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (category_id) REFERENCES categories(id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            // 解析并执行 SQL 语句（按分号分割，排除注释和空行）
+            $sqlStatements = explode(';', $sqlContent);
             
-            // 订单表
-            $pdo->exec("CREATE TABLE IF NOT EXISTS orders (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                order_no VARCHAR(50) UNIQUE NOT NULL,
-                user_id INT NOT NULL,
-                product_id INT NOT NULL,
-                quantity INT DEFAULT 1,
-                price DECIMAL(10,2) NOT NULL,
-                status ENUM('pending', 'paid', 'completed', 'cancelled') DEFAULT 'pending',
-                payment_method VARCHAR(50) DEFAULT NULL,
-                payment_no VARCHAR(100) DEFAULT NULL,
-                create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (product_id) REFERENCES products(id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            foreach ($sqlStatements as $statement) {
+                $statement = trim($statement);
+                // 跳过空行和注释
+                if (empty($statement) || str_starts_with($statement, '--')) {
+                    continue;
+                }
+                // 跳过创建数据库的语句（已在配置中指定）
+                if (str_starts_with(strtolower($statement), 'create database')) {
+                    continue;
+                }
+                // 跳过 use 语句（已在配置中指定）
+                if (str_starts_with(strtolower($statement), 'use ')) {
+                    continue;
+                }
+                $pdo->exec($statement);
+            }
             
-            // 下载记录表
-            $pdo->exec("CREATE TABLE IF NOT EXISTS downloads (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                user_id INT NOT NULL,
-                product_id INT NOT NULL,
-                order_id INT NOT NULL,
-                download_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                FOREIGN KEY (product_id) REFERENCES products(id),
-                FOREIGN KEY (order_id) REFERENCES orders(id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            
-            // 插入初始分类数据
-            $pdo->exec("INSERT IGNORE INTO categories (name, type, sort_order) VALUES 
-                ('玄幻', 'novel', 1),
-                ('都市', 'novel', 2),
-                ('仙侠', 'novel', 3),
-                ('历史', 'novel', 4),
-                ('科幻', 'novel', 5),
-                ('流行', 'music', 1),
-                ('摇滚', 'music', 2),
-                ('电子', 'music', 3),
-                ('古典', 'music', 4),
-                ('民谣', 'music', 5)");
-            
-            // 创建管理员账号
+            // 创建管理员账号（使用用户设置的密码）
             $hashedPassword = password_hash($adminPassword, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT IGNORE INTO users (username, email, password, role) VALUES 
-                ('admin', 'admin@bookmusic.com', ?, 'admin')");
+            $stmt = $pdo->prepare("INSERT IGNORE INTO users (username, email, password, role, status) VALUES 
+                ('admin', 'admin@bookmusic.com', ?, 'admin', 1)");
             $stmt->execute([$hashedPassword]);
             
             $isInstalled = true;
+            file_put_contents(__DIR__ . '/install.lock', 'locked');
             
         } catch (PDOException $e) {
             $error = "数据库安装失败: " . $e->getMessage();
+        } catch (Exception $e) {
+            $error = "安装失败: " . $e->getMessage();
         }
     }
 }

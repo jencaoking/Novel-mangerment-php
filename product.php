@@ -48,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buy'])) {
         // 创建订单
         $orderNo = generateOrderNo();
         $stmt = $db->prepare("
-            INSERT INTO orders (order_no, user_id, product_id, amount, status) 
-            VALUES (?, ?, ?, ?, 'unpaid')
+            INSERT INTO orders (order_no, user_id, product_id, price, status) 
+            VALUES (?, ?, ?, ?, 'pending')
         ");
         
         try {

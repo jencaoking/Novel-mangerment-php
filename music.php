@@ -50,8 +50,10 @@ $stmt = $db->prepare("
     LEFT JOIN categories c ON p.category_id = c.id 
     WHERE {$where}
     ORDER BY {$orderBy}
-    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
+    LIMIT ? OFFSET ?
 ");
+$params[] = $pagination['per_page'];
+$params[] = $pagination['offset'];
 $stmt->execute($params);
 $music = $stmt->fetchAll();
 

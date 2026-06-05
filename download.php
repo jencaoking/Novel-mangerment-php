@@ -47,6 +47,10 @@ $stmt = $db->prepare("
 $stmt->execute([getCurrentUserId(), $productId]);
 $order = $stmt->fetch();
 
+if (!$order) {
+    die('没有找到有效的已支付订单，无法下载。');
+}
+
 // 记录下载
 $stmt = $db->prepare("
     INSERT INTO downloads (user_id, product_id, order_id, ip, user_agent) 

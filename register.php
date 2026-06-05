@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 <?php endif; ?>
                 
-                <form method="POST" action="" class="auth-form" data-validate>
+                <form method="POST" action="" class="auth-form">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div class="form-group">

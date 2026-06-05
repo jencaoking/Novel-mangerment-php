@@ -6,37 +6,50 @@ class ProductModel extends BaseModel {
     protected $primaryKey = 'id';
     protected $fillable = ['title', 'type', 'category_id', 'author', 'description', 'cover', 'file_path', 'preview_path', 'price', 'downloads', 'sales', 'status'];
 
-    public function getProductsByType($type, $page = 1, $perPage = 12) {
-        $offset = ($page - 1) * $perPage;
-        $sql = "SELECT p.*, c.name as category_name 
+    private function buildBaseQuery(string $selectFields = 'p.*, c.name as category_name'): string {
+        return "SELECT {$selectFields} 
                 FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.type = ? AND p.status = 1 
-                ORDER BY p.create_time DESC 
-                LIMIT ?, ?";
-        return $this->fetchAll($sql, [$type, $offset, $perPage]);
+                LEFT JOIN categories c ON p.category_id = c.id";
+    }
+
+    private function buildActiveCondition(): string {
+        return "p.status = 1";
+    }
+
+    private function applyPagination(array &$params, int $page, int $perPage): string {
+        $offset = ($page - 1) * $perPage;
+        $params[] = $offset;
+        $params[] = $perPage;
+        return " LIMIT ?, ?";
+    }
+
+    private function buildCountQuery(string $tableAlias = null): string {
+        $tableName = $tableAlias ? "{$this->table} {$tableAlias}" : $this->table;
+        return "SELECT COUNT(*) as total FROM {$tableName}";
+    }
+
+    public function getProductsByType($type, $page = 1, $perPage = 12) {
+        $sql = $this->buildBaseQuery() . " 
+                WHERE p.type = ? AND " . $this->buildActiveCondition() . " 
+                ORDER BY p.create_time DESC";
+        $params = [$type];
+        $sql .= $this->applyPagination($params, $page, $perPage);
+        return $this->fetchAll($sql, $params);
     }
 
     public function getTotalByType($type) {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE type = ? AND status = 1";
+        $sql = $this->buildCountQuery() . " WHERE type = ? AND status = 1";
         $result = $this->fetch($sql, [$type]);
         return $result['total'];
     }
 
     public function getProductDetail($id) {
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.id = ?";
+        $sql = $this->buildBaseQuery() . " WHERE p.id = ?";
         return $this->fetch($sql, [$id]);
     }
 
     public function searchProducts($keyword, $type = null, $page = 1, $perPage = 12) {
-        $offset = ($page - 1) * $perPage;
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.status = 1";
+        $sql = $this->buildBaseQuery() . " WHERE " . $this->buildActiveCondition();
         $params = [];
 
         if ($type) {
@@ -49,15 +62,14 @@ class ProductModel extends BaseModel {
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
 
-        $sql .= " ORDER BY p.create_time DESC LIMIT ?, ?";
-        $params[] = $offset;
-        $params[] = $perPage;
+        $sql .= " ORDER BY p.create_time DESC";
+        $sql .= $this->applyPagination($params, $page, $perPage);
 
         return $this->fetchAll($sql, $params);
     }
 
     public function searchCount($keyword, $type = null) {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE status = 1";
+        $sql = $this->buildCountQuery() . " WHERE status = 1";
         $params = [];
 
         if ($type) {
@@ -85,36 +97,25 @@ class ProductModel extends BaseModel {
     }
 
     public function getAllProducts($page = 1, $perPage = 10) {
-        $offset = ($page - 1) * $perPage;
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                ORDER BY p.create_time DESC 
-                LIMIT ?, ?";
-        return $this->fetchAll($sql, [$offset, $perPage]);
+        $sql = $this->buildBaseQuery() . " ORDER BY p.create_time DESC";
+        $params = [];
+        $sql .= $this->applyPagination($params, $page, $perPage);
+        return $this->fetchAll($sql, $params);
     }
 
     public function getTotalProducts() {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+        $sql = $this->buildCountQuery();
         $result = $this->fetch($sql);
         return $result['total'];
     }
 
     public function getTopProducts($limit = 10) {
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                ORDER BY p.sales DESC 
-                LIMIT ?";
+        $sql = $this->buildBaseQuery() . " ORDER BY p.sales DESC LIMIT ?";
         return $this->fetchAll($sql, [$limit]);
     }
 
     public function searchAdminProducts($type = '', $search = '', $page = 1, $perPage = 20) {
-        $offset = ($page - 1) * $perPage;
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE 1=1";
+        $sql = $this->buildBaseQuery() . " WHERE 1=1";
         $params = [];
 
         if ($type) {
@@ -128,15 +129,14 @@ class ProductModel extends BaseModel {
             $params[] = "%$search%";
         }
 
-        $sql .= " ORDER BY p.create_time DESC LIMIT ?, ?";
-        $params[] = $offset;
-        $params[] = $perPage;
+        $sql .= " ORDER BY p.create_time DESC";
+        $sql .= $this->applyPagination($params, $page, $perPage);
 
         return $this->fetchAll($sql, $params);
     }
 
     public function searchAdminProductsCount($type = '', $search = '') {
-        $sql = "SELECT COUNT(*) as total FROM {$this->table} p WHERE 1=1";
+        $sql = $this->buildCountQuery('p') . " WHERE 1=1";
         $params = [];
 
         if ($type) {
@@ -155,11 +155,7 @@ class ProductModel extends BaseModel {
     }
 
     public function getProductsWithFilter($type, $category = 0, $search = '', $sort = 'latest', $page = 1, $perPage = 12) {
-        $offset = ($page - 1) * $perPage;
-        $sql = "SELECT p.*, c.name as category_name 
-                FROM {$this->table} p 
-                LEFT JOIN categories c ON p.category_id = c.id 
-                WHERE p.type = ? AND p.status = 1";
+        $sql = $this->buildBaseQuery() . " WHERE p.type = ? AND " . $this->buildActiveCondition();
         $params = [$type];
 
         if ($category > 0) {
@@ -181,17 +177,14 @@ class ProductModel extends BaseModel {
             default => 'p.create_time DESC'
         };
 
-        $sql .= " ORDER BY {$orderBy} LIMIT ?, ?";
-        $params[] = $offset;
-        $params[] = $perPage;
+        $sql .= " ORDER BY {$orderBy}";
+        $sql .= $this->applyPagination($params, $page, $perPage);
 
         return $this->fetchAll($sql, $params);
     }
 
     public function getProductsWithFilterCount($type, $category = 0, $search = '') {
-        $sql = "SELECT COUNT(*) as total 
-                FROM {$this->table} p 
-                WHERE p.type = ? AND p.status = 1";
+        $sql = $this->buildCountQuery('p') . " WHERE p.type = ? AND p.status = 1";
         $params = [$type];
 
         if ($category > 0) {

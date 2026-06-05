@@ -29,15 +29,7 @@ class UserController
         
         $totalOrders = $this->orderModel->getUserOrderCount($userId);
         $totalSpent = $this->userModel->getTotalSpent($userId);
-        
-        $recentOrders = $this->orderModel->fetchAll("
-            SELECT o.*, p.title, p.cover as cover_image, p.type 
-            FROM orders o 
-            JOIN products p ON o.product_id = p.id 
-            WHERE o.user_id = ? 
-            ORDER BY o.create_time DESC 
-            LIMIT 5
-        ", [$userId]);
+        $recentOrders = $this->orderModel->getUserRecentOrders($userId, 5);
 
         require __DIR__ . '/../../views/user/index.phtml';
     }

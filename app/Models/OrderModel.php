@@ -104,4 +104,67 @@ class OrderModel extends BaseModel {
                 ORDER BY month DESC";
         return $this->fetchAll($sql, [$months]);
     }
+
+    public function getRecentOrders($limit = 10) {
+        $sql = "SELECT o.*, p.title, u.username 
+                FROM {$this->table} o 
+                LEFT JOIN products p ON o.product_id = p.id 
+                LEFT JOIN users u ON o.user_id = u.id 
+                ORDER BY o.create_time DESC 
+                LIMIT ?";
+        return $this->fetchAll($sql, [$limit]);
+    }
+
+    public function getDailyOrderStats($days = 7) {
+        $sql = "SELECT DATE(create_time) as date, COUNT(*) as count 
+                FROM {$this->table} 
+                WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL ? DAY) 
+                GROUP BY DATE(create_time) 
+                ORDER BY date";
+        return $this->fetchAll($sql, [$days]);
+    }
+
+    public function searchAdminOrders($status = '', $page = 1, $perPage = 20) {
+        $offset = ($page - 1) * $perPage;
+        $sql = "SELECT o.*, p.title as product_title, u.username, u.email 
+                FROM {$this->table} o 
+                LEFT JOIN products p ON o.product_id = p.id 
+                LEFT JOIN users u ON o.user_id = u.id 
+                WHERE 1=1";
+        $params = [];
+
+        if ($status) {
+            $sql .= " AND o.status = ?";
+            $params[] = $status;
+        }
+
+        $sql .= " ORDER BY o.create_time DESC LIMIT ?, ?";
+        $params[] = $offset;
+        $params[] = $perPage;
+
+        return $this->fetchAll($sql, $params);
+    }
+
+    public function searchAdminOrdersCount($status = '') {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} o WHERE 1=1";
+        $params = [];
+
+        if ($status) {
+            $sql .= " AND o.status = ?";
+            $params[] = $status;
+        }
+
+        $result = $this->fetch($sql, $params);
+        return $result['total'];
+    }
+
+    public function getUserRecentOrders($userId, $limit = 5) {
+        $sql = "SELECT o.*, p.title, p.cover as cover_image, p.type 
+                FROM {$this->table} o 
+                JOIN products p ON o.product_id = p.id 
+                WHERE o.user_id = ? 
+                ORDER BY o.create_time DESC 
+                LIMIT ?";
+        return $this->fetchAll($sql, [$userId, $limit]);
+    }
 }

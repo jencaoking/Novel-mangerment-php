@@ -23,36 +23,9 @@ class ProductController {
         $search = trim($_GET['search'] ?? '');
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
-        $where = "p.type = 'novel' AND p.status = 1";
-        $params = [];
-
-        if ($category > 0) {
-            $where .= " AND p.category_id = ?";
-            $params[] = $category;
-        }
-
-        if (!empty($search)) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
-            $where .= " AND (p.title LIKE ? OR p.author LIKE ?)";
-            $params[] = "%{$search}%";
-            $params[] = "%{$search}%";
-        }
-
-        $orderBy = match($sort) {
-            'hot' => 'p.sales DESC, p.downloads DESC',
-            'price_asc' => 'p.price ASC',
-            'price_desc' => 'p.price DESC',
-            default => 'p.create_time DESC'
-        };
-
-        $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
-        $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
-
+        $total = $this->productModel->getProductsWithFilterCount('novel', $category, $search);
         $pagination = paginate($total, $page, 12);
-
-        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
-        $novels = $this->productModel->fetchAll($sql, $params);
-
+        $novels = $this->productModel->getProductsWithFilter('novel', $category, $search, $sort, $page, 12);
         $categories = $this->categoryModel->getCategoriesByType('novel');
 
         require __DIR__ . '/../../views/novels.phtml';
@@ -64,36 +37,9 @@ class ProductController {
         $search = trim($_GET['search'] ?? '');
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 
-        $where = "p.type = 'music' AND p.status = 1";
-        $params = [];
-
-        if ($category > 0) {
-            $where .= " AND p.category_id = ?";
-            $params[] = $category;
-        }
-
-        if (!empty($search)) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
-            $where .= " AND (p.title LIKE ? OR p.author LIKE ?)";
-            $params[] = "%{$search}%";
-            $params[] = "%{$search}%";
-        }
-
-        $orderBy = match($sort) {
-            'hot' => 'p.sales DESC, p.downloads DESC',
-            'price_asc' => 'p.price ASC',
-            'price_desc' => 'p.price DESC',
-            default => 'p.create_time DESC'
-        };
-
-        $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
-        $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
-
+        $total = $this->productModel->getProductsWithFilterCount('music', $category, $search);
         $pagination = paginate($total, $page, 12);
-
-        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
-        $music = $this->productModel->fetchAll($sql, $params);
-
+        $music = $this->productModel->getProductsWithFilter('music', $category, $search, $sort, $page, 12);
         $categories = $this->categoryModel->getCategoriesByType('music');
 
         require __DIR__ . '/../../views/music.phtml';

@@ -36,9 +36,9 @@ class AdminController
             'pendingOrders' => $orderStats['pending_count'] ?? 0
         ];
 
-        $topProducts = $this->productModel->fetchAll("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.sales DESC LIMIT 10");
-        $recentOrders = $this->orderModel->fetchAll("SELECT o.*, p.title, u.username FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id ORDER BY o.create_time DESC LIMIT 10");
-        $dailyOrderStats = $this->orderModel->fetchAll("SELECT DATE(create_time) as date, COUNT(*) as count FROM orders WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(create_time) ORDER BY date");
+        $topProducts = $this->productModel->getTopProducts(10);
+        $recentOrders = $this->orderModel->getRecentOrders(10);
+        $dailyOrderStats = $this->orderModel->getDailyOrderStats(7);
 
         require __DIR__ . '/../../views/admin/dashboard.phtml';
     }
@@ -49,27 +49,9 @@ class AdminController
         $type = $_GET['type'] ?? '';
         $search = $_GET['search'] ?? '';
 
-        $where = '1=1';
-        $params = [];
-
-        if ($type) {
-            $where .= ' AND p.type = ?';
-            $params[] = $type;
-        }
-
-        if ($search) {
-            $where .= ' AND (p.title LIKE ? OR p.author LIKE ?)';
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-
-        $countSql = "SELECT COUNT(*) FROM products p WHERE $where";
-        $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
-
+        $total = $this->productModel->searchAdminProductsCount($type, $search);
         $pagination = paginate($total, $page, 20);
-
-        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE $where ORDER BY p.create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
-        $products = $this->productModel->fetchAll($sql, $params);
+        $products = $this->productModel->searchAdminProducts($type, $search, $page, 20);
         $categories = $this->categoryModel->getAllCategories();
 
         require __DIR__ . '/../../views/admin/products.phtml';
@@ -80,22 +62,9 @@ class AdminController
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $search = $_GET['search'] ?? '';
 
-        $where = '1=1';
-        $params = [];
-
-        if ($search) {
-            $where .= ' AND (username LIKE ? OR email LIKE ?)';
-            $params[] = "%$search%";
-            $params[] = "%$search%";
-        }
-
-        $countSql = "SELECT COUNT(*) FROM users WHERE $where";
-        $total = $this->userModel->fetch($countSql, $params)['COUNT(*)'];
-
+        $total = $this->userModel->searchAdminUsersCount($search);
         $pagination = paginate($total, $page, 20);
-
-        $sql = "SELECT * FROM users WHERE $where ORDER BY create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
-        $users = $this->userModel->fetchAll($sql, $params);
+        $users = $this->userModel->searchAdminUsers($search, $page, 20);
 
         require __DIR__ . '/../../views/admin/users.phtml';
     }
@@ -139,22 +108,12 @@ class AdminController
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $status = $_GET['status'] ?? '';
 
-        $where = '1=1';
-        $params = [];
-
         $allowedStatus = ['pending', 'paid', 'completed', 'cancelled'];
-        if ($status && in_array($status, $allowedStatus)) {
-            $where .= ' AND o.status = ?';
-            $params[] = $status;
-        }
+        $filterStatus = (in_array($status, $allowedStatus)) ? $status : '';
 
-        $countSql = "SELECT COUNT(*) FROM orders o WHERE $where";
-        $total = $this->orderModel->fetch($countSql, $params)['COUNT(*)'];
-
+        $total = $this->orderModel->searchAdminOrdersCount($filterStatus);
         $pagination = paginate($total, $page, 20);
-
-        $sql = "SELECT o.*, p.title as product_title, u.username, u.email FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id WHERE $where ORDER BY o.create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
-        $orders = $this->orderModel->fetchAll($sql, $params);
+        $orders = $this->orderModel->searchAdminOrders($filterStatus, $page, 20);
 
         require __DIR__ . '/../../views/admin/orders.phtml';
     }

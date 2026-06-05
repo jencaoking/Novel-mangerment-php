@@ -72,4 +72,36 @@ class UserModel extends BaseModel {
         $result = $this->fetch($sql, [$userId]);
         return $result['total'];
     }
+
+    public function searchAdminUsers($search = '', $page = 1, $perPage = 20) {
+        $offset = ($page - 1) * $perPage;
+        $sql = "SELECT * FROM {$this->table} WHERE 1=1";
+        $params = [];
+
+        if ($search) {
+            $sql .= " AND (username LIKE ? OR email LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $sql .= " ORDER BY create_time DESC LIMIT ?, ?";
+        $params[] = $offset;
+        $params[] = $perPage;
+
+        return $this->fetchAll($sql, $params);
+    }
+
+    public function searchAdminUsersCount($search = '') {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE 1=1";
+        $params = [];
+
+        if ($search) {
+            $sql .= " AND (username LIKE ? OR email LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $result = $this->fetch($sql, $params);
+        return $result['total'];
+    }
 }

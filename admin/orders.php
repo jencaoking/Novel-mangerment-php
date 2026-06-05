@@ -5,8 +5,31 @@ requireAdmin();
 
 $db = getDB();
 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, (int)($_GET['page'] ?? 1));
 $status = $_GET['status'] ?? '';
+$allowedStatus = ['', 'pending', 'paid', 'completed', 'cancelled'];
+if (!in_array($status, $allowedStatus)) $status = '';
+
+$csrf = generateCSRFToken();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $orderId = $_POST['order_id'] ?? 0;
+    
+    if ($action === 'update_status' && $orderId) {
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            die('安全验证失败');
+        }
+        $newStatus = $_POST['status'] ?? '';
+        $allowedNewStatus = ['pending', 'paid', 'completed', 'cancelled'];
+        if (!in_array($newStatus, $allowedNewStatus)) {
+            die('非法状态');
+        }
+        $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
+        $stmt->execute([$newStatus, $orderId]);
+        redirect('orders.php?page=' . $page . ($status ? '&status=' . urlencode($status) : ''));
+    }
+}
 
 $where = '1=1';
 $params = [];
@@ -25,21 +48,6 @@ $pagination = paginate($total, $page, 20);
 $stmt = $db->prepare("SELECT o.*, p.title as product_title, u.username, u.email FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id WHERE $where ORDER BY o.create_time DESC LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}");
 $stmt->execute($params);
 $orders = $stmt->fetchAll();
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    $orderId = $_POST['order_id'] ?? 0;
-    
-    if ($action === 'update_status' && $orderId) {
-        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-            die('安全验证失败');
-        }
-        $newStatus = $_POST['status'] ?? '';
-        $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
-        $stmt->execute([$newStatus, $orderId]);
-        redirect('orders.php?page=' . $page . ($status ? '&status=' . $status : ''));
-    }
-}
 ?>
 <?php include 'header.php'; ?>
 
@@ -103,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <td><?= e($order['create_time']) ?></td>
                         <td>
                             <form method="POST" class="d-inline">
-                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                                 <input type="hidden" name="action" value="update_status">
                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                                 <select name="status" class="form-select form-select-sm d-inline" style="width: auto;" onchange="this.form.submit()">
@@ -125,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <ul class="pagination justify-content-center mb-0">
                     <?php if ($pagination['has_previous']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= $status ? '&status=' . $status : '' ?>">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= $status ? '&status=' . urlencode($status) : '' ?>">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
@@ -133,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                         <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                            <a class="page-link" href="?page=<?= $i ?><?= $status ? '&status=' . $status : '' ?>">
+                            <a class="page-link" href="?page=<?= $i ?><?= $status ? '&status=' . urlencode($status) : '' ?>">
                                 <?= $i ?>
                             </a>
                         </li>
@@ -141,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <?php if ($pagination['has_next']): ?>
                         <li class="page-item">
-                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= $status ? '&status=' . $status : '' ?>">
+                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= $status ? '&status=' . urlencode($status) : '' ?>">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>

@@ -9,8 +9,8 @@ $stats = [
     'totalUsers' => $db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
     'totalOrders' => $db->query("SELECT COUNT(*) FROM orders")->fetchColumn(),
     'totalProducts' => $db->query("SELECT COUNT(*) FROM products")->fetchColumn(),
-    'totalRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid'")->fetchColumn(),
-    'todayRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid' AND DATE(create_time) = CURDATE()")->fetchColumn(),
+    'totalRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed')")->fetchColumn(),
+    'todayRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed') AND DATE(create_time) = CURDATE()")->fetchColumn(),
     'pendingOrders' => $db->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn()
 ];
 
@@ -22,6 +22,9 @@ $recentOrders = $stmt->fetchAll();
 
 $stmt = $db->query("SELECT DATE(create_time) as date, COUNT(*) as count FROM orders WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(create_time) ORDER BY date");
 $orderStats = $stmt->fetchAll();
+
+$chartLabels = array_column($orderStats, 'date');
+$chartData = array_column($orderStats, 'count');
 ?>
 <?php include 'header.php'; ?>
 
@@ -147,13 +150,9 @@ $orderStats = $stmt->fetchAll();
 <script>
 const ctx = document.getElementById('salesChart');
 if (ctx) {
-    const labels = [];
-    const data = [];
-    <?php foreach ($orderStats as $stat): ?>
-        labels.push('<?= substr($stat['date'], 5) ?>');
-        data.push(<?= $stat['count'] ?>);
-    <?php endforeach; ?>
-    
+    const labels = <?= json_encode(array_map(function($d) { return substr($d, 5); }, $chartLabels)) ?>;
+    const data = <?= json_encode($chartData) ?>;
+
     new Chart(ctx, {
         type: 'line',
         data: {

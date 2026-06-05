@@ -9,9 +9,9 @@ $stats = [
     'total_users' => $db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
     'total_products' => $db->query("SELECT COUNT(*) FROM products")->fetchColumn(),
     'total_orders' => $db->query("SELECT COUNT(*) FROM orders")->fetchColumn(),
-    'total_revenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid'")->fetchColumn(),
+    'total_revenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed')")->fetchColumn(),
     'today_orders' => $db->query("SELECT COUNT(*) FROM orders WHERE DATE(create_time) = CURDATE()")->fetchColumn(),
-    'today_revenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid' AND DATE(create_time) = CURDATE()")->fetchColumn(),
+    'today_revenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed') AND DATE(create_time) = CURDATE()")->fetchColumn(),
 ];
 
 $stmt = $db->query("SELECT DATE(create_time) as date, COUNT(*) as count FROM orders WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(create_time) ORDER BY date");
@@ -19,6 +19,9 @@ $orderTrend = $stmt->fetchAll();
 
 $stmt = $db->query("SELECT p.title, p.sales, p.downloads FROM products p ORDER BY p.sales DESC LIMIT 10");
 $topProducts = $stmt->fetchAll();
+
+$chartLabels = array_column($orderTrend, 'date');
+$chartData = array_column($orderTrend, 'count');
 ?>
 <?php include 'header.php'; ?>
 
@@ -122,13 +125,9 @@ $topProducts = $stmt->fetchAll();
 <script>
 const orderCtx = document.getElementById('orderTrendChart');
 if (orderCtx) {
-    const labels = [];
-    const data = [];
-    <?php foreach ($orderTrend as $item): ?>
-        labels.push('<?= substr($item['date'], 5) ?>');
-        data.push(<?= $item['count'] ?>);
-    <?php endforeach; ?>
-    
+    const labels = <?= json_encode(array_map(function($d) { return substr($d, 5); }, $chartLabels)) ?>;
+    const data = <?= json_encode($chartData) ?>;
+
     new Chart(orderCtx, {
         type: 'bar',
         data: {

@@ -1,11 +1,23 @@
 <?php
 namespace App\Controllers;
 
+use App\Models\ProductModel;
+use App\Models\CategoryModel;
+use App\Models\OrderModel;
+
 class ProductController {
     
+    protected $productModel;
+    protected $categoryModel;
+    protected $orderModel;
+
+    public function __construct() {
+        $this->productModel = new ProductModel();
+        $this->categoryModel = new CategoryModel();
+        $this->orderModel = new OrderModel();
+    }
+    
     public function novels() {
-        global $db;
-        
         $category = isset($_GET['category']) ? (int)$_GET['category'] : 0;
         $sort = $_GET['sort'] ?? 'latest';
         $search = trim($_GET['search'] ?? '');
@@ -33,33 +45,20 @@ class ProductController {
             default => 'p.create_time DESC'
         };
 
-        $countStmt = $db->prepare("SELECT COUNT(*) FROM products p WHERE {$where}");
-        $countStmt->execute($params);
-        $total = $countStmt->fetchColumn();
+        $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
+        $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
 
         $pagination = paginate($total, $page);
 
-        $stmt = $db->prepare("
-            SELECT p.*, c.name as category_name 
-            FROM products p 
-            LEFT JOIN categories c ON p.category_id = c.id 
-            WHERE {$where}
-            ORDER BY {$orderBy}
-            LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
-        ");
-        $stmt->execute($params);
-        $novels = $stmt->fetchAll();
+        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
+        $novels = $this->productModel->fetchAll($sql, $params);
 
-        $stmt = $db->prepare("SELECT * FROM categories WHERE type = 'novel' AND status = 1 ORDER BY sort_order");
-        $stmt->execute();
-        $categories = $stmt->fetchAll();
+        $categories = $this->categoryModel->getCategoriesByType('novel');
 
         require __DIR__ . '/../../views/novels.phtml';
     }
     
     public function music() {
-        global $db;
-        
         $category = isset($_GET['category']) ? (int)$_GET['category'] : 0;
         $sort = $_GET['sort'] ?? 'latest';
         $search = trim($_GET['search'] ?? '');
@@ -87,47 +86,27 @@ class ProductController {
             default => 'p.create_time DESC'
         };
 
-        $countStmt = $db->prepare("SELECT COUNT(*) FROM products p WHERE {$where}");
-        $countStmt->execute($params);
-        $total = $countStmt->fetchColumn();
+        $countSql = "SELECT COUNT(*) FROM products p WHERE {$where}";
+        $total = $this->productModel->fetch($countSql, $params)['COUNT(*)'];
 
         $pagination = paginate($total, $page);
 
-        $stmt = $db->prepare("
-            SELECT p.*, c.name as category_name 
-            FROM products p 
-            LEFT JOIN categories c ON p.category_id = c.id 
-            WHERE {$where}
-            ORDER BY {$orderBy}
-            LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
-        ");
-        $stmt->execute($params);
-        $music = $stmt->fetchAll();
+        $sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE {$where} ORDER BY {$orderBy} LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}";
+        $music = $this->productModel->fetchAll($sql, $params);
 
-        $stmt = $db->prepare("SELECT * FROM categories WHERE type = 'music' AND status = 1 ORDER BY sort_order");
-        $stmt->execute();
-        $categories = $stmt->fetchAll();
+        $categories = $this->categoryModel->getCategoriesByType('music');
 
         require __DIR__ . '/../../views/music.phtml';
     }
     
     public function show($id) {
-        global $db;
-        
         $productId = (int)$id;
         
         if ($productId <= 0) {
             redirect('/');
         }
 
-        $stmt = $db->prepare("
-            SELECT p.*, c.name as category_name 
-            FROM products p 
-            LEFT JOIN categories c ON p.category_id = c.id 
-            WHERE p.id = ? AND p.status = 1
-        ");
-        $stmt->execute([$productId]);
-        $product = $stmt->fetch();
+        $product = $this->productModel->getProductDetail($productId);
 
         if (!$product) {
             redirect('/');
@@ -135,7 +114,7 @@ class ProductController {
 
         $hasPurchased = false;
         if (isLoggedIn()) {
-            $hasPurchased = hasPurchased(getCurrentUserId(), $productId);
+            $hasPurchased = $this->orderModel->hasPurchased(getCurrentUserId(), $productId);
         }
 
         $message = '';
@@ -143,22 +122,13 @@ class ProductController {
     }
     
     public function buy($id) {
-        global $db;
-        
         $productId = (int)$id;
         
         if ($productId <= 0) {
             redirect('/');
         }
 
-        $stmt = $db->prepare("
-            SELECT p.*, c.name as category_name 
-            FROM products p 
-            LEFT JOIN categories c ON p.category_id = c.id 
-            WHERE p.id = ? AND p.status = 1
-        ");
-        $stmt->execute([$productId]);
-        $product = $stmt->fetch();
+        $product = $this->productModel->getProductDetail($productId);
 
         if (!$product) {
             redirect('/');
@@ -166,7 +136,7 @@ class ProductController {
 
         $hasPurchased = false;
         if (isLoggedIn()) {
-            $hasPurchased = hasPurchased(getCurrentUserId(), $productId);
+            $hasPurchased = $this->orderModel->hasPurchased(getCurrentUserId(), $productId);
         }
 
         $message = '';
@@ -181,16 +151,10 @@ class ProductController {
             } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
                 $message = '安全验证失败';
             } else {
-                $orderNo = generateOrderNo();
-                $stmt = $db->prepare("
-                    INSERT INTO orders (order_no, user_id, product_id, price, status) 
-                    VALUES (?, ?, ?, ?, 'pending')
-                ");
-                
                 try {
-                    $stmt->execute([$orderNo, getCurrentUserId(), $productId, $product['price']]);
+                    $this->orderModel->createOrder(getCurrentUserId(), $productId, $product['price']);
                     $message = '订单创建成功，请完成支付';
-                } catch (PDOException $e) {
+                } catch (\Exception $e) {
                     $message = '创建订单失败，请稍后再试';
                 }
             }

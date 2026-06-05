@@ -1,8 +1,11 @@
 <?php
 spl_autoload_register(function ($className) {
-    // 白名单过滤，防止路径穿越
     $classPath = preg_replace('#[^A-Za-z0-9_/]#', '', str_replace('\\', '/', $className));
-    if (strpos($classPath, 'App/') === 0) {
+    if (strpos($classPath, 'App/Controllers/') === 0) {
+        $file = __DIR__ . '/../app/Controllers/' . substr($classPath, 16) . '.php';
+    } elseif (strpos($classPath, 'App/Models/') === 0) {
+        $file = __DIR__ . '/../app/Models/' . substr($classPath, 10) . '.php';
+    } elseif (strpos($classPath, 'App/') === 0) {
         $file = __DIR__ . '/../app/' . substr($classPath, 4) . '.php';
     } elseif (strpos($classPath, 'Core/') === 0) {
         $file = __DIR__ . '/../core/' . substr($classPath, 5) . '.php';

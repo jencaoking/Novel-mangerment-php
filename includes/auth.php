@@ -3,143 +3,101 @@
  * BookMusic Mall - 认证授权模块
  */
 
-require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/functions.php';
 
-// 启动Session
+use App\Models\UserModel;
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-/**
- * 用户登录
- */
 function login($username, $password, $remember = false) {
-    $db = getDB();
-    
-    // 查找用户（支持用户名或邮箱登录）
-    $stmt = $db->prepare("
-        SELECT id, username, email, password, avatar, role, status 
-        FROM users 
-        WHERE (username = ? OR email = ?) AND status = 1
-    ");
-    $stmt->execute([$username, $username]);
-    $user = $stmt->fetch();
+    $userModel = new UserModel();
+    $user = $userModel->findByUsernameOrEmail($username);
     
     if (!$user) {
         return ['success' => false, 'message' => '用户不存在或已被禁用'];
     }
     
-    // 验证密码
     if (!verifyPassword($password, $user['password'])) {
         return ['success' => false, 'message' => '密码错误'];
     }
     
-    // 更新最后登录时间
-    $updateStmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
-    $updateStmt->execute([$user['id']]);
+    $userModel->updateLastLogin($user['id']);
     
     session_regenerate_id(true);
     
-    // 设置Session
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['avatar'] = $user['avatar'];
     $_SESSION['role'] = $user['role'];
     
-    // 记住登录
     if ($remember) {
         $token = generateRandomString(32);
         $hashedToken = hash('sha256', $token);
         setcookie('remember_token', $token, time() + 7 * 86400, '/', '', false, true);
         
-        $stmt = $db->prepare("UPDATE users SET remember_token = ?, remember_token_expire = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?");
-        $stmt->execute([$hashedToken, $user['id']]);
+        $expire = date('Y-m-d H:i:s', time() + 7 * 86400);
+        $userModel->updateRememberToken($user['id'], $hashedToken, $expire);
     }
     
     return ['success' => true, 'user' => $user];
 }
 
-/**
- * 用户注册
- */
 function register($username, $email, $password) {
-    $db = getDB();
+    $userModel = new UserModel();
     
-    // 验证用户名格式
     if (!isValidUsername($username)) {
         return ['success' => false, 'message' => '用户名格式不正确'];
     }
     
-    // 验证邮箱格式
     if (!isValidEmail($email)) {
         return ['success' => false, 'message' => '邮箱格式不正确'];
     }
     
-    // 检查用户名是否已存在
-    $stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    if ($stmt->fetch()) {
+    if ($userModel->isUsernameExists($username)) {
         return ['success' => false, 'message' => '用户名已被使用'];
     }
     
-    // 检查邮箱是否已存在
-    $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->fetch()) {
+    if ($userModel->isEmailExists($email)) {
         return ['success' => false, 'message' => '邮箱已被使用'];
     }
     
-    // 加密密码
     $hashedPassword = hashPassword($password);
     
-    // 插入用户数据
-    $stmt = $db->prepare("
-        INSERT INTO users (username, email, password, role, status) 
-        VALUES (?, ?, ?, 'user', 1)
-    ");
-    
     try {
-        $stmt->execute([$username, $email, $hashedPassword]);
-        $userId = $db->lastInsertId();
+        $userId = $userModel->create([
+            'username' => $username,
+            'email' => $email,
+            'password' => $hashedPassword,
+            'role' => 'user',
+            'status' => 1
+        ]);
         
         return ['success' => true, 'user_id' => $userId];
-    } catch (PDOException $e) {
+    } catch (\PDOException $e) {
         return ['success' => false, 'message' => '注册失败，请稍后再试'];
     }
 }
 
-/**
- * 检查用户是否登录
- */
 function isLoggedIn() {
     if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== '') {
         return true;
     }
-    
     return checkAutoLogin();
 }
 
-/**
- * 自动登录检查
- */
 function checkAutoLogin() {
     if (!isset($_COOKIE['remember_token']) || empty($_COOKIE['remember_token'])) {
         return false;
     }
     
-    $db = getDB();
+    $userModel = new UserModel();
     $token = $_COOKIE['remember_token'];
     $hashedToken = hash('sha256', $token);
     
-    $stmt = $db->prepare("
-        SELECT id, username, email, avatar, role 
-        FROM users 
-        WHERE remember_token = ? AND remember_token_expire > NOW() AND status = 1
-    ");
-    $stmt->execute([$hashedToken]);
-    $user = $stmt->fetch();
+    $user = $userModel->findByRememberToken($hashedToken);
     
     if (!$user) {
         return false;
@@ -156,23 +114,14 @@ function checkAutoLogin() {
     return true;
 }
 
-/**
- * 检查用户是否是管理员
- */
 function isAdmin() {
     return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
 }
 
-/**
- * 获取当前用户ID
- */
 function getCurrentUserId() {
     return $_SESSION['user_id'] ?? null;
 }
 
-/**
- * 获取当前用户信息
- */
 function getCurrentUser() {
     if (!isLoggedIn()) {
         return null;
@@ -187,9 +136,6 @@ function getCurrentUser() {
     ];
 }
 
-/**
- * 用户登出
- */
 function logout() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -197,10 +143,8 @@ function logout() {
     
     $userId = $_SESSION['user_id'] ?? null;
     
-    // 清除Session
     $_SESSION = [];
     
-    // 删除Session Cookie
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
         setcookie(session_name(), '', time() - 42000,
@@ -209,68 +153,35 @@ function logout() {
         );
     }
     
-    // 删除记住登录的Cookie
     setcookie('remember_token', '', time() - 3600, '/');
     
-    // 清除数据库中的remember_token
     if ($userId) {
-        $db = getDB();
-        $stmt = $db->prepare("UPDATE users SET remember_token = NULL, remember_token_expire = NULL WHERE id = ?");
-        $stmt->execute([$userId]);
+        $userModel = new UserModel();
+        $userModel->clearRememberToken($userId);
     }
     
-    // 销毁Session
     session_destroy();
 }
 
-/**
- * 要求用户登录
- */
 function requireLogin() {
     if (!isLoggedIn()) {
-        redirect('/login.php');
+        redirect('/login');
     }
 }
 
-/**
- * 要求管理员权限
- */
 function requireAdmin() {
     if (!isLoggedIn() || !isAdmin()) {
         $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'] ?? '/admin/dashboard';
-        redirect('/admin/login.php');
+        redirect('/login');
     }
 }
 
-/**
- * 检查用户是否购买了商品
- */
 function hasPurchased($userId, $productId) {
-    $db = getDB();
-    
-    $stmt = $db->prepare("
-        SELECT id FROM orders 
-        WHERE user_id = ? AND product_id = ? AND status = 'paid'
-    ");
-    $stmt->execute([$userId, $productId]);
-    
-    return $stmt->fetch() !== false;
+    $orderModel = new \App\Models\OrderModel();
+    return $orderModel->hasPurchased($userId, $productId);
 }
 
-/**
- * 获取用户购买的商品列表
- */
 function getUserPurchasedProducts($userId) {
-    $db = getDB();
-    
-    $stmt = $db->prepare("
-        SELECT p.*, o.order_no, o.pay_time
-        FROM products p
-        INNER JOIN orders o ON p.id = o.product_id
-        WHERE o.user_id = ? AND o.status = 'paid'
-        ORDER BY o.pay_time DESC
-    ");
-    $stmt->execute([$userId]);
-    
-    return $stmt->fetchAll();
+    $orderModel = new \App\Models\OrderModel();
+    return $orderModel->getUserPurchasedProducts($userId);
 }

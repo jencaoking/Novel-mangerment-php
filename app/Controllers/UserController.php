@@ -1,20 +1,25 @@
 <?php
 namespace App\Controllers;
 
+use App\Models\UserModel;
+use App\Models\OrderModel;
+
 class UserController
 {
+    protected $userModel;
+    protected $orderModel;
+
     public function __construct()
     {
         requireLogin();
+        $this->userModel = new UserModel();
+        $this->orderModel = new OrderModel();
     }
 
     private function getUser()
     {
-        global $db;
         $userId = getCurrentUserId();
-        $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$userId]);
-        return $stmt->fetch();
+        return $this->userModel->find($userId);
     }
 
     public function profile()
@@ -28,7 +33,6 @@ class UserController
 
     public function updateProfile()
     {
-        global $db;
         $userId = getCurrentUserId();
         $error = '';
         $success = false;
@@ -48,25 +52,18 @@ class UserController
                 } elseif (!isValidEmail($email)) {
                     $error = '邮箱格式不正确';
                 } else {
-                    $stmt = $db->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
-                    $stmt->execute([$username, $userId]);
-                    if ($stmt->fetch()) {
+                    if ($this->userModel->isUsernameExists($username) && $user['username'] !== $username) {
                         $error = '用户名已被使用';
+                    } elseif ($this->userModel->isEmailExists($email) && $user['email'] !== $email) {
+                        $error = '邮箱已被使用';
                     } else {
-                        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-                        $stmt->execute([$email, $userId]);
-                        if ($stmt->fetch()) {
-                            $error = '邮箱已被使用';
+                        if ($this->userModel->update($userId, ['username' => $username, 'email' => $email])) {
+                            $_SESSION['username'] = $username;
+                            $_SESSION['email'] = $email;
+                            $success = true;
+                            $user = $this->getUser();
                         } else {
-                            $stmt = $db->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
-                            if ($stmt->execute([$username, $email, $userId])) {
-                                $_SESSION['username'] = $username;
-                                $_SESSION['email'] = $email;
-                                $success = true;
-                                $user = $this->getUser();
-                            } else {
-                                $error = '更新失败，请稍后再试';
-                            }
+                            $error = '更新失败，请稍后再试';
                         }
                     }
                 }
@@ -78,30 +75,18 @@ class UserController
 
     public function orders()
     {
-        global $db;
         $userId = getCurrentUserId();
         $user = $this->getUser();
-
-        $stmt = $db->prepare("
-            SELECT o.*, p.title, p.cover 
-            FROM orders o 
-            LEFT JOIN products p ON o.product_id = p.id 
-            WHERE o.user_id = ? 
-            ORDER BY o.create_time DESC
-        ");
-        $stmt->execute([$userId]);
-        $orders = $stmt->fetchAll();
+        $orders = $this->orderModel->getUserOrders($userId);
 
         require __DIR__ . '/../../views/user/orders.phtml';
     }
 
     public function downloads()
     {
-        global $db;
         $userId = getCurrentUserId();
         $user = $this->getUser();
-
-        $purchasedProducts = getUserPurchasedProducts($userId);
+        $purchasedProducts = $this->orderModel->getUserPurchasedProducts($userId);
 
         require __DIR__ . '/../../views/user/downloads.phtml';
     }

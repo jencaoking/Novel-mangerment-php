@@ -1,0 +1,106 @@
+<?php
+namespace App\Models;
+
+class OrderModel extends BaseModel {
+    protected $table = 'orders';
+    protected $primaryKey = 'id';
+    protected $fillable = ['order_no', 'user_id', 'product_id', 'price', 'status', 'pay_time', 'cancel_time', 'refund_time', 'refund_reason'];
+
+    public function createOrder($userId, $productId, $price) {
+        $orderNo = date('YmdHis') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        $data = [
+            'order_no' => $orderNo,
+            'user_id' => $userId,
+            'product_id' => $productId,
+            'price' => $price,
+            'status' => 'pending'
+        ];
+        return $this->create($data);
+    }
+
+    public function findByOrderNo($orderNo) {
+        return $this->findBy('order_no', $orderNo);
+    }
+
+    public function getUserOrders($userId, $page = 1, $perPage = 10) {
+        $offset = ($page - 1) * $perPage;
+        $sql = "SELECT o.*, p.title, p.type, p.cover 
+                FROM {$this->table} o 
+                LEFT JOIN products p ON o.product_id = p.id 
+                WHERE o.user_id = ? 
+                ORDER BY o.create_time DESC 
+                LIMIT ?, ?";
+        return $this->fetchAll($sql, [$userId, $offset, $perPage]);
+    }
+
+    public function getUserOrderCount($userId) {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE user_id = ?";
+        $result = $this->fetch($sql, [$userId]);
+        return $result['total'];
+    }
+
+    public function getUserPurchasedProducts($userId) {
+        $sql = "SELECT p.*, o.order_no, o.pay_time 
+                FROM products p 
+                INNER JOIN {$this->table} o ON p.id = o.product_id 
+                WHERE o.user_id = ? AND o.status = 'paid' 
+                ORDER BY o.pay_time DESC";
+        return $this->fetchAll($sql, [$userId]);
+    }
+
+    public function hasPurchased($userId, $productId) {
+        $sql = "SELECT id FROM {$this->table} WHERE user_id = ? AND product_id = ? AND status = 'paid'";
+        return $this->fetch($sql, [$userId, $productId]) !== false;
+    }
+
+    public function updateStatus($orderId, $status) {
+        $data = ['status' => $status];
+        if ($status === 'paid') {
+            $data['pay_time'] = date('Y-m-d H:i:s');
+        } elseif ($status === 'cancelled') {
+            $data['cancel_time'] = date('Y-m-d H:i:s');
+        } elseif ($status === 'completed') {
+            $data['pay_time'] = date('Y-m-d H:i:s');
+        }
+        return $this->update($orderId, $data);
+    }
+
+    public function getAllOrders($page = 1, $perPage = 10) {
+        $offset = ($page - 1) * $perPage;
+        $sql = "SELECT o.*, u.username, p.title, p.type 
+                FROM {$this->table} o 
+                LEFT JOIN users u ON o.user_id = u.id 
+                LEFT JOIN products p ON o.product_id = p.id 
+                ORDER BY o.create_time DESC 
+                LIMIT ?, ?";
+        return $this->fetchAll($sql, [$offset, $perPage]);
+    }
+
+    public function getTotalOrders() {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table}";
+        $result = $this->fetch($sql);
+        return $result['total'];
+    }
+
+    public function getStats() {
+        $sql = "SELECT 
+                    COUNT(*) as total_orders,
+                    SUM(CASE WHEN status = 'paid' THEN price ELSE 0 END) as total_revenue,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
+                    SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_count
+                FROM {$this->table}";
+        return $this->fetch($sql);
+    }
+
+    public function getMonthlyStats($months = 6) {
+        $sql = "SELECT 
+                    DATE_FORMAT(create_time, '%Y-%m') as month,
+                    COUNT(*) as order_count,
+                    SUM(CASE WHEN status = 'paid' THEN price ELSE 0 END) as revenue
+                FROM {$this->table}
+                WHERE create_time >= DATE_SUB(NOW(), INTERVAL ? MONTH)
+                GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+                ORDER BY month DESC";
+        return $this->fetchAll($sql, [$months]);
+    }
+}

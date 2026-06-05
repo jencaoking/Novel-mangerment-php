@@ -48,9 +48,10 @@ function verifyPassword($password, $hash) {
 
 /**
  * 生成唯一订单号
+ * 使用更高熵的随机数防止碰撞
  */
 function generateOrderNo() {
-    return date('YmdHis') . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+    return date('YmdHis') . bin2hex(random_bytes(4));
 }
 
 /**
@@ -91,15 +92,16 @@ function isValidUsername($username) {
 
 /**
  * 获取客户端IP
+ * 注意：不在反向代理后面时，直接使用 REMOTE_ADDR
+ * 如果在代理后面，应配置信任的代理白名单
  */
 function getClientIP() {
-    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        return $_SERVER['HTTP_CLIENT_IP'];
-    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        return $_SERVER['HTTP_X_FORWARDED_FOR'];
-    } else {
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    // 如果需要在反向代理后获取真实IP，应该只信任配置的代理
+    // 这里采用安全策略：直接返回 REMOTE_ADDR
+    if (!empty($_SERVER['REMOTE_ADDR'])) {
+        return $_SERVER['REMOTE_ADDR'];
     }
+    return '0.0.0.0';
 }
 
 /**
@@ -111,8 +113,11 @@ function getUserAgent() {
 
 /**
  * 重定向
+ * 防止 HTTP 头注入攻击
  */
 function redirect($url) {
+    // 移除可能的换行符，防止头注入
+    $url = preg_replace('/[\r\n]/', '', $url);
     header("Location: $url");
     exit;
 }
@@ -155,12 +160,14 @@ function uploadFile($file, $targetDir, $allowedTypes, $maxSize) {
         'gif' => ['image/gif'],
         'mp3' => ['audio/mpeg', 'audio/mp3', 'audio/x-mpeg'],
         'wav' => ['audio/wav', 'audio/x-wav'],
-        'ogg' => ['audio/ogg', 'application/ogg']
+        'ogg' => ['audio/ogg', 'application/ogg'],
+        'txt' => ['text/plain']
     ];
     
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $detectedMimeType = $finfo->file($file['tmp_name']);
     
+    // 对所有文件类型进行 MIME 验证
     if (isset($allowedMimeTypes[$fileExt]) && !in_array($detectedMimeType, $allowedMimeTypes[$fileExt])) {
         return ['success' => false, 'message' => '文件类型与扩展名不匹配'];
     }

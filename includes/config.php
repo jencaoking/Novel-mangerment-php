@@ -46,9 +46,18 @@ define('ALIPAY_VERSION', '1.0');
 
 date_default_timezone_set('Asia/Shanghai');
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// 开发环境显示错误，生产环境记录日志
+if (getenv('APP_ENV') === 'production') {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    ini_set('log_errors', 1);
+    ini_set('error_log', __DIR__ . '/../logs/error.log');
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+}
 
-ini_set('session.name', SESSION_NAME);
+// Session 配置使用函数而非 ini_set，确保在 session_start() 前生效
+session_name(SESSION_NAME);
 ini_set('session.cookie_lifetime', SESSION_LIFETIME);
 ini_set('session.gc_maxlifetime', SESSION_LIFETIME);

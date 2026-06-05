@@ -188,13 +188,22 @@ class AlipaySDK {
      */
     private function formatPrivateKey($privateKey) {
         $privateKey = str_replace(["\r", "\n"], '', $privateKey);
+        
+        // 检测原始格式
+        $isPKCS8 = (strpos($privateKey, 'BEGIN PRIVATE KEY') !== false);
+        
         $privateKey = str_replace('-----BEGIN RSA PRIVATE KEY-----', '', $privateKey);
         $privateKey = str_replace('-----END RSA PRIVATE KEY-----', '', $privateKey);
         $privateKey = str_replace('-----BEGIN PRIVATE KEY-----', '', $privateKey);
         $privateKey = str_replace('-----END PRIVATE KEY-----', '', $privateKey);
         $privateKey = wordwrap($privateKey, 64, "\n", true);
         
-        return "-----BEGIN RSA PRIVATE KEY-----\n" . $privateKey . "\n-----END RSA PRIVATE KEY-----";
+        // 根据原始格式返回正确的头尾
+        if ($isPKCS8) {
+            return "-----BEGIN PRIVATE KEY-----\n" . $privateKey . "\n-----END PRIVATE KEY-----";
+        } else {
+            return "-----BEGIN RSA PRIVATE KEY-----\n" . $privateKey . "\n-----END RSA PRIVATE KEY-----";
+        }
     }
     
     /**

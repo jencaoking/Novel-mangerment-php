@@ -36,7 +36,9 @@ function login($username, $password, $remember = false) {
     if ($remember) {
         $token = generateRandomString(32);
         $hashedToken = hash('sha256', $token);
-        setcookie('remember_token', $token, time() + 7 * 86400, '/', '', false, true);
+        // 根据是否 HTTPS 动态设置 Secure 标志
+        $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+        setcookie('remember_token', $token, time() + 7 * 86400, '/', '', $secure, true);
         
         $expire = date('Y-m-d H:i:s', time() + 7 * 86400);
         $userModel->updateRememberToken($user['id'], $hashedToken, $expire);
@@ -82,7 +84,7 @@ function register($username, $email, $password) {
 }
 
 function isLoggedIn() {
-    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== '') {
+    if (!empty($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])) {
         return true;
     }
     return checkAutoLogin();
@@ -153,7 +155,9 @@ function logout() {
         );
     }
     
-    setcookie('remember_token', '', time() - 3600, '/');
+    // 登出时清除 remember_token，保持与设置时参数一致
+    $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    setcookie('remember_token', '', time() - 3600, '/', '', $secure, true);
     
     if ($userId) {
         $userModel = new UserModel();
@@ -171,7 +175,17 @@ function requireLogin() {
 
 function requireAdmin() {
     if (!isLoggedIn() || !isAdmin()) {
-        $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'] ?? '/admin/dashboard';
+        // 过滤 REQUEST_URI，只允许站内路径
+        $redirectUrl = $_SERVER['REQUEST_URI'] ?? '/admin/dashboard';
+        // 移除可能的协议和域名部分，防止开放重定向
+        $parsedUrl = parse_url($redirectUrl);
+        if ($parsedUrl && isset($parsedUrl['path'])) {
+            $redirectUrl = $parsedUrl['path'];
+            if (isset($parsedUrl['query'])) {
+                $redirectUrl .= '?' . $parsedUrl['query'];
+            }
+        }
+        $_SESSION['redirect_url'] = $redirectUrl;
         redirect('/login');
     }
 }

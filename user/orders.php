@@ -10,6 +10,10 @@ requireLogin();
 
 $userId = getCurrentUserId();
 
+$stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$user = $stmt->fetch();
+
 // 获取订单列表
 $stmt = $db->prepare("
     SELECT o.*, p.title, p.cover, p.type, p.author 
@@ -57,8 +61,10 @@ $orders = $stmt->fetchAll();
             <div class="user-layout">
                 <div class="user-sidebar">
                     <div class="user-info">
-                        <h3><?= e($_SESSION['username']) ?></h3>
-                        <p><?= e($_SESSION['email']) ?></p>
+                        <img src="/uploads/avatar/<?= e($user['avatar'] ?: 'default.jpg') ?>" 
+                             alt="<?= e($user['username']) ?>" class="user-avatar">
+                        <h3><?= e($user['username']) ?></h3>
+                        <p><?= e($user['email']) ?></p>
                     </div>
                     <nav class="user-nav">
                         <a href="/user/">概览</a>
@@ -84,16 +90,11 @@ $orders = $stmt->fetchAll();
                                         <p><?= $order['type'] === 'novel' ? '作者' : '歌手' ?>：<?= e($order['author']) ?></p>
                                         <p>订单号：<?= e($order['order_no']) ?></p>
                                         <p>金额：<strong><?= formatPrice($order['amount']) ?></strong></p>
-                                        <p>下单时间：<?= $order['create_time'] ?></p>
+                                        <p>下单时间：<?= timeAgo($order['create_time']) ?></p>
                                     </div>
                                     <div class="order-status">
-                                        <span class="status-badge status-<?= $order['status'] ?>">
-                                            <?= match($order['status']) {
-                                                'paid' => '已支付',
-                                                'unpaid' => '待支付',
-                                                'cancelled' => '已取消',
-                                                'refunded' => '已退款'
-                                            } ?>
+                                        <span class="status-badge status-<?= getOrderStatusBadge($order['status']) ?>">
+                                            <?= getOrderStatusText($order['status']) ?>
                                         </span>
                                         <?php if ($order['status'] === 'paid'): ?>
                                             <a href="/download.php?id=<?= $order['product_id'] ?>" class="btn btn-primary btn-sm">
@@ -116,6 +117,7 @@ $orders = $stmt->fetchAll();
         .user-layout { display: grid; grid-template-columns: 250px 1fr; gap: var(--spacing-2xl); }
         .user-sidebar { position: sticky; top: 100px; height: fit-content; }
         .user-info { text-align: center; padding: var(--spacing-xl); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); margin-bottom: var(--spacing-lg); }
+        .user-avatar { width: 100px; height: 100px; border-radius: 50%; margin-bottom: var(--spacing-md); }
         .user-nav { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: var(--spacing-md); }
         .user-nav a { display: block; padding: var(--spacing-md); color: var(--gray-700); border-radius: var(--radius-md); }
         .user-nav a:hover, .user-nav a.active { background: var(--accent-light); color: var(--accent-dark); }
@@ -129,8 +131,10 @@ $orders = $stmt->fetchAll();
         .order-details p { margin: var(--spacing-xs) 0; color: var(--gray-600); }
         .order-status { display: flex; flex-direction: column; align-items: flex-end; gap: var(--spacing-md); }
         .status-badge { padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; }
-        .status-paid { background: #d4edda; color: #155724; }
-        .status-unpaid { background: #fff3cd; color: #856404; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-secondary { background: #f8f9fa; color: #6c757d; }
+        .status-danger { background: #f8d7da; color: #721c24; }
         .btn-sm { padding: 0.5rem 1rem; font-size: 0.9rem; }
         @media (max-width: 768px) { .user-layout { grid-template-columns: 1fr; } .order-card { flex-direction: column; } }
     </style>

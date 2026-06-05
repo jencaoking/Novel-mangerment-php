@@ -148,6 +148,23 @@ function uploadFile($file, $targetDir, $allowedTypes, $maxSize) {
         return ['success' => false, 'message' => '不支持的文件类型'];
     }
     
+    $allowedMimeTypes = [
+        'jpg' => ['image/jpeg', 'image/pjpeg'],
+        'jpeg' => ['image/jpeg', 'image/pjpeg'],
+        'png' => ['image/png', 'image/x-png'],
+        'gif' => ['image/gif'],
+        'mp3' => ['audio/mpeg', 'audio/mp3', 'audio/x-mpeg'],
+        'wav' => ['audio/wav', 'audio/x-wav'],
+        'ogg' => ['audio/ogg', 'application/ogg']
+    ];
+    
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $detectedMimeType = $finfo->file($file['tmp_name']);
+    
+    if (isset($allowedMimeTypes[$fileExt]) && !in_array($detectedMimeType, $allowedMimeTypes[$fileExt])) {
+        return ['success' => false, 'message' => '文件类型与扩展名不匹配'];
+    }
+    
     $fileName = uniqid() . '.' . $fileExt;
     $targetPath = $targetDir . $fileName;
     
@@ -185,7 +202,8 @@ function paginate($total, $page, $perPage = ITEMS_PER_PAGE) {
  * 生成随机字符串
  */
 function generateRandomString($length = 16) {
-    return bin2hex(random_bytes($length / 2));
+    $bytes = random_bytes((int)ceil($length / 2));
+    return substr(bin2hex($bytes), 0, $length);
 }
 
 /**
@@ -216,4 +234,51 @@ function truncate($string, $length = 100, $suffix = '...') {
         return $string;
     }
     return mb_substr($string, 0, $length, 'UTF-8') . $suffix;
+}
+
+/**
+ * 获取订单状态文本
+ */
+function getOrderStatusText($status) {
+    $statusMap = [
+        'pending' => '待支付',
+        'paid' => '已支付',
+        'completed' => '已完成',
+        'cancelled' => '已取消'
+    ];
+    return $statusMap[$status] ?? '未知';
+}
+
+/**
+ * 获取订单状态徽章颜色
+ */
+function getOrderStatusBadge($status) {
+    $badgeMap = [
+        'pending' => 'warning',
+        'paid' => 'success',
+        'completed' => 'info',
+        'cancelled' => 'secondary'
+    ];
+    return $badgeMap[$status] ?? 'light';
+}
+
+/**
+ * 获取商品类型文本
+ */
+function getProductTypeText($type) {
+    return $type === 'novel' ? '小说' : '音乐';
+}
+
+/**
+ * 获取用户状态文本
+ */
+function getUserStatusText($status) {
+    return $status == 1 ? '正常' : '禁用';
+}
+
+/**
+ * 获取用户状态徽章颜色
+ */
+function getUserStatusBadge($status) {
+    return $status == 1 ? 'success' : 'danger';
 }

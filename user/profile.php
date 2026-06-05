@@ -9,7 +9,6 @@ require_once '../includes/db.php';
 requireLogin();
 
 $userId = getCurrentUserId();
-$message = '';
 $error = '';
 
 // 获取用户信息
@@ -49,9 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($stmt->execute([$username, $email, $userId])) {
                         $_SESSION['username'] = $username;
                         $_SESSION['email'] = $email;
-                        $message = '资料更新成功';
-                        $user['username'] = $username;
-                        $user['email'] = $email;
+                        redirect('/user/profile.php?success=1');
                     } else {
                         $error = '更新失败，请稍后再试';
                     }
@@ -98,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="user-layout">
                 <div class="user-sidebar">
                     <div class="user-info">
-                        <img src="/uploads/avatar/<?= $user['avatar'] ?? 'default.jpg' ?>" 
+                        <img src="/uploads/avatar/<?= e($user['avatar'] ?: 'default.jpg') ?>" 
                              alt="<?= e($user['username']) ?>" class="user-avatar">
                         <h3><?= e($user['username']) ?></h3>
                         <p><?= e($user['email']) ?></p>
@@ -119,8 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="alert alert-error"><?= e($error) ?></div>
                     <?php endif; ?>
                     
-                    <?php if ($message): ?>
-                        <div class="alert alert-success"><?= e($message) ?></div>
+                    <?php if (isset($_GET['success'])): ?>
+                        <div class="alert alert-success">资料更新成功</div>
                     <?php endif; ?>
                     
                     <form method="POST" class="profile-form">

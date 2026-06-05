@@ -71,7 +71,7 @@ $totalSpent = $stmt->fetchColumn();
                 <!-- 侧边栏 -->
                 <div class="user-sidebar">
                     <div class="user-info">
-                        <img src="/uploads/avatar/<?= $user['avatar'] ?? 'default.jpg' ?>" 
+                        <img src="/uploads/avatar/<?= e($user['avatar'] ?: 'default.jpg') ?>" 
                              alt="<?= e($user['username']) ?>" 
                              class="user-avatar">
                         <h3><?= e($user['username']) ?></h3>
@@ -160,13 +160,8 @@ $totalSpent = $stmt->fetchColumn();
                                             <p>金额：<?= formatPrice($order['amount']) ?></p>
                                         </div>
                                         <div class="order-status">
-                                            <span class="status-badge status-<?= $order['status'] ?>">
-                                                <?= match($order['status']) {
-                                                    'paid' => '已支付',
-                                                    'unpaid' => '待支付',
-                                                    'cancelled' => '已取消',
-                                                    'refunded' => '已退款'
-                                                } ?>
+                                            <span class="status-badge status-<?= getOrderStatusBadge($order['status']) ?>">
+                                                <?= getOrderStatusText($order['status']) ?>
                                             </span>
                                             <span class="order-time"><?= timeAgo($order['create_time']) ?></span>
                                         </div>
@@ -329,24 +324,24 @@ $totalSpent = $stmt->fetchColumn();
             font-weight: 600;
         }
         
-        .status-paid {
+        .status-success {
             background: #d4edda;
             color: #155724;
         }
         
-        .status-unpaid {
+        .status-warning {
             background: #fff3cd;
             color: #856404;
         }
         
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
+        .status-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
         }
         
-        .status-refunded {
-            background: #d1ecf1;
-            color: #0c5460;
+        .status-danger {
+            background: #f8d7da;
+            color: #721c24;
         }
         
         @media (max-width: 768px) {

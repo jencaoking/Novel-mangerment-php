@@ -39,6 +39,8 @@ function login($username, $password, $remember = false) {
     $updateStmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
     $updateStmt->execute([$user['id']]);
     
+    session_regenerate_id(true);
+    
     // 设置Session
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
@@ -49,8 +51,11 @@ function login($username, $password, $remember = false) {
     // 记住登录
     if ($remember) {
         $token = generateRandomString(32);
+        $hashedToken = hash('sha256', $token);
         setcookie('remember_token', $token, time() + 7 * 86400, '/', '', false, true);
-        // 这里可以存储token到数据库用于验证
+        
+        $stmt = $db->prepare("UPDATE users SET remember_token = ?, remember_token_expire = DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id = ?");
+        $stmt->execute([$hashedToken, $user['id']]);
     }
     
     return ['success' => true, 'user' => $user];
@@ -109,7 +114,46 @@ function register($username, $email, $password) {
  * 检查用户是否登录
  */
 function isLoggedIn() {
-    return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+    if (isset($_SESSION['user_id']) && $_SESSION['user_id'] !== '') {
+        return true;
+    }
+    
+    return checkAutoLogin();
+}
+
+/**
+ * 自动登录检查
+ */
+function checkAutoLogin() {
+    if (!isset($_COOKIE['remember_token']) || empty($_COOKIE['remember_token'])) {
+        return false;
+    }
+    
+    $db = getDB();
+    $token = $_COOKIE['remember_token'];
+    $hashedToken = hash('sha256', $token);
+    
+    $stmt = $db->prepare("
+        SELECT id, username, email, avatar, role 
+        FROM users 
+        WHERE remember_token = ? AND remember_token_expire > NOW() AND status = 1
+    ");
+    $stmt->execute([$hashedToken]);
+    $user = $stmt->fetch();
+    
+    if (!$user) {
+        return false;
+    }
+    
+    session_regenerate_id(true);
+    
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['username'] = $user['username'];
+    $_SESSION['email'] = $user['email'];
+    $_SESSION['avatar'] = $user['avatar'];
+    $_SESSION['role'] = $user['role'];
+    
+    return true;
 }
 
 /**
@@ -147,6 +191,12 @@ function getCurrentUser() {
  * 用户登出
  */
 function logout() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $userId = $_SESSION['user_id'] ?? null;
+    
     // 清除Session
     $_SESSION = [];
     
@@ -161,6 +211,13 @@ function logout() {
     
     // 删除记住登录的Cookie
     setcookie('remember_token', '', time() - 3600, '/');
+    
+    // 清除数据库中的remember_token
+    if ($userId) {
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE users SET remember_token = NULL, remember_token_expire = NULL WHERE id = ?");
+        $stmt->execute([$userId]);
+    }
     
     // 销毁Session
     session_destroy();

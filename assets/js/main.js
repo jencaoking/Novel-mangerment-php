@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initProductCards();
     initFormValidation();
     initSearch();
+    lazyLoadImages();
 });
 
 /**
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initNavbar() {
     const navbar = document.querySelector('.navbar');
+    if (!navbar) return;
     let lastScroll = 0;
     
     // 滚动效果
@@ -204,8 +206,8 @@ function initFormValidation() {
                 submitBtn.textContent = '处理中...';
                 submitBtn.disabled = true;
                 
-                // 提交表单
-                submitForm(this, formData).then(() => {
+                // 提交表单并在finally中重置状态
+                submitForm(this, formData).finally(() => {
                     submitBtn.textContent = originalText;
                     submitBtn.disabled = false;
                 });
@@ -247,6 +249,10 @@ async function submitForm(form, formData) {
             method: form.method || 'POST',
             body: formData
         });
+        
+        if (!response.ok) {
+            throw new Error('网络请求异常');
+        }
         
         const result = await response.json();
         

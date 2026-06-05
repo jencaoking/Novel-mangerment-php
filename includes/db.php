@@ -54,6 +54,3 @@ class Database {
 function getDB() {
     return Database::getInstance()->getConnection();
 }
-
-// 初始化数据库连接
-$db = getDB();

@@ -1,0 +1,24 @@
+# 敏感配置文件
+includes/config.php
+
+# 上传的文件
+uploads/
+
+# IDE 相关
+.vscode/
+.idea/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# Composer
+vendor/
+composer.lock
+
+# 临时文件
+*.tmp
+*.temp

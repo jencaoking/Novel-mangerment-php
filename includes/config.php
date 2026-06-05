@@ -1,15 +1,15 @@
-<?php
+&lt;?php
 /**
  * BookMusic Mall - 配置文件
  * 小说与音乐数字内容销售平台
  */
 
 // 数据库配置
-define('DB_HOST', 'mysql6.sqlpub.com');
-define('DB_PORT', '3311');
-define('DB_NAME', 'novel00000');
-define('DB_USER', 'jencao0');
-define('DB_PASS', 'De3IIdSHLcwZMRHk');
+define('DB_HOST', 'localhost');
+define('DB_PORT', '3306');
+define('DB_NAME', 'your_database_name');
+define('DB_USER', 'your_username');
+define('DB_PASS', 'your_password');
 define('DB_CHARSET', 'utf8mb4');
 
 // 网站配置

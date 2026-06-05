@@ -86,6 +86,7 @@ class OrderModel extends BaseModel {
         $sql = "SELECT 
                     COUNT(*) as total_orders,
                     SUM(CASE WHEN status = 'paid' THEN price ELSE 0 END) as total_revenue,
+                    SUM(CASE WHEN status = 'paid' AND DATE(create_time) = CURDATE() THEN price ELSE 0 END) as today_revenue,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count,
                     SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) as paid_count
                 FROM {$this->table}";

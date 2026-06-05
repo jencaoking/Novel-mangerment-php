@@ -42,7 +42,7 @@ class BaseModel {
         return $stmt->fetch();
     }
 
-    public function findAll($conditions = [], $orderBy = null, $limit = null, $offset = 0) {
+    public function findAll($conditions = [], $orderBy = null, $offset = 0, $limit = null) {
         $sql = "SELECT * FROM {$this->table}";
         $params = [];
 

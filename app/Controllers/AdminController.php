@@ -26,17 +26,19 @@ class AdminController
 
     public function dashboard()
     {
+        $orderStats = $this->orderModel->getStats();
         $stats = [
             'totalUsers' => $this->userModel->count(),
             'totalOrders' => $this->orderModel->count(),
             'totalProducts' => $this->productModel->count(),
-            'totalRevenue' => $this->orderModel->getStats()['total_revenue'] ?? 0,
-            'pendingOrders' => $this->orderModel->count(['status' => 'pending'])
+            'totalRevenue' => $orderStats['total_revenue'] ?? 0,
+            'todayRevenue' => $orderStats['today_revenue'] ?? 0,
+            'pendingOrders' => $orderStats['pending_count'] ?? 0
         ];
 
         $topProducts = $this->productModel->fetchAll("SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.sales DESC LIMIT 10");
         $recentOrders = $this->orderModel->fetchAll("SELECT o.*, p.title, u.username FROM orders o LEFT JOIN products p ON o.product_id = p.id LEFT JOIN users u ON o.user_id = u.id ORDER BY o.create_time DESC LIMIT 10");
-        $orderStats = $this->orderModel->fetchAll("SELECT DATE(create_time) as date, COUNT(*) as count FROM orders WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(create_time) ORDER BY date");
+        $dailyOrderStats = $this->orderModel->fetchAll("SELECT DATE(create_time) as date, COUNT(*) as count FROM orders WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY DATE(create_time) ORDER BY date");
 
         require __DIR__ . '/../../views/admin/dashboard.phtml';
     }

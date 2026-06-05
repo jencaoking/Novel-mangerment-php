@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平台，提供优质的小说和音乐资源下载服务。
+BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平台，采用 MVC 架构设计，提供优质的小说和音乐资源下载服务。
 
 ## 功能特性
 
@@ -29,6 +29,8 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 - ✅ XSS 防护
 - ✅ 文件上传安全验证
 - ✅ 高质量前端设计（现代极简主义风格）
+- ✅ MVC 架构设计
+- ✅ 自动加载机制
 
 ## 技术栈
 
@@ -36,6 +38,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 - PHP 8.2+
 - MySQL 8.0+
 - PDO 数据库连接
+- Composer 依赖管理
 
 ### 前端
 - HTML5 + CSS3
@@ -49,6 +52,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 - PHP >= 8.2
 - MySQL >= 8.0
 - Apache/Nginx Web 服务器
+- Composer（可选，用于自动加载）
 
 ### 2. 安装步骤
 
@@ -57,15 +61,20 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
    cd /your/web/directory
    ```
 
-2. **配置数据库**
+2. **安装依赖（可选）**
+   ```bash
+   composer install
+   ```
+
+3. **配置数据库**
    - 创建 MySQL 数据库
    - 导入 `database.sql` 文件
    ```bash
    mysql -u root -p < database.sql
    ```
 
-3. **配置数据库连接**
-   - 编辑 `includes/config.php`
+4. **配置数据库连接**
+   - 复制 `includes/config.php.example` 为 `includes/config.php`
    - 修改数据库连接信息：
    ```php
    define('DB_HOST', 'localhost');
@@ -74,15 +83,15 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
    define('DB_PASS', 'your_password');
    ```
 
-4. **配置 Web 服务器**
+5. **配置 Web 服务器**
 
    **Apache 配置示例：**
    ```apache
    <VirtualHost *:80>
        ServerName bookmusic.local
-       DocumentRoot /path/to/bookmusic
+       DocumentRoot /path/to/bookmusic/public
        
-       <Directory /path/to/bookmusic>
+       <Directory /path/to/bookmusic/public>
            AllowOverride All
            Require all granted
        </Directory>
@@ -94,7 +103,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
    server {
        listen 80;
        server_name bookmusic.local;
-       root /path/to/bookmusic;
+       root /path/to/bookmusic/public;
        index index.php;
        
        location / {
@@ -109,13 +118,13 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
    }
    ```
 
-5. **设置目录权限**
+6. **设置目录权限**
    ```bash
    chmod -R 755 uploads/
-   chmod -R 755 assets/
+   chmod -R 755 public/assets/
    ```
 
-6. **访问网站**
+7. **访问网站**
    - 打开浏览器访问配置的域名
    - 默认管理员账户：
      - 用户名：`admin`
@@ -126,36 +135,53 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
 
 ```
 bookmusic/
-├── index.php              # 首页
-├── login.php              # 用户登录
-├── register.php           # 用户注册
-├── logout.php             # 用户退出
-├── novels.php             # 小说商城
-├── music.php              # 音乐商城
-├── product.php            # 商品详情
-├── buy.php                # 购买处理
-├── download.php           # 下载处理
-├── user/                  # 用户中心
-│   ├── index.php          # 用户中心首页
-│   ├── profile.php        # 个人资料
-│   └── orders.php         # 我的订单
-├── admin/                 # 管理后台
-├── includes/              # 公共模块
-│   ├── db.php             # 数据库连接
-│   ├── auth.php           # 认证授权
-│   ├── functions.php      # 工具函数
-│   └── config.php         # 配置文件
-├── uploads/               # 文件存储
-│   ├── novels/            # 小说文件
-│   ├── music/             # 音乐文件
-│   ├── preview/           # 音乐试听
-│   ├── cover/             # 封面图片
-│   └── avatar/            # 用户头像
-├── assets/                # 静态资源
-│   ├── css/               # 样式文件
-│   ├── js/                # 脚本文件
-│   └── images/            # 公共图片
-└── database.sql           # 数据库初始化脚本
+├── app/                    # 应用核心
+│   ├── Controllers/        # 控制器层
+│   │   ├── AdminController.php
+│   │   ├── AuthController.php
+│   │   ├── HomeController.php
+│   │   ├── ProductController.php
+│   │   └── UserController.php
+│   └── Models/             # 模型层
+│       ├── BaseModel.php
+│       ├── CartModel.php
+│       ├── CategoryModel.php
+│       ├── DownloadModel.php
+│       ├── OrderModel.php
+│       ├── ProductModel.php
+│       └── UserModel.php
+├── core/                   # 核心框架
+│   ├── Autoloader.php      # 自动加载器
+│   └── Router.php          # 路由管理
+├── includes/               # 公共模块
+│   ├── auth.php            # 认证授权
+│   ├── config.php          # 配置文件
+│   ├── config.php.example  # 配置模板
+│   ├── db.php              # 数据库连接
+│   └── functions.php       # 工具函数
+├── public/                 # 公共访问目录
+│   ├── assets/             # 静态资源
+│   │   ├── css/            # 样式文件
+│   │   └── js/             # 脚本文件
+│   ├── .htaccess           # Apache 配置
+│   └── index.php           # 入口文件
+├── views/                  # 视图层
+│   ├── admin/              # 管理员视图
+│   ├── auth/               # 认证视图
+│   └── user/               # 用户视图
+├── admin/                  # 管理后台页面
+├── user/                   # 用户中心页面
+├── uploads/                # 文件存储（小说、音乐、封面等）
+├── old_pages/              # 旧版页面（保留兼容）
+├── composer.json           # Composer 配置
+├── database.sql            # 数据库初始化脚本
+├── install.php             # 安装脚本
+├── index.php               # 首页
+├── login.php               # 登录页
+├── register.php            # 注册页
+├── logout.php              # 退出处理
+├── download.php            # 下载处理
+└── README.md               # 项目说明
 ```
 
 ## 使用说明
@@ -183,19 +209,26 @@ bookmusic/
 
 ## 开发说明
 
+### MVC 架构
+项目采用 MVC（Model-View-Controller）架构模式：
+- **Model**：处理数据逻辑和数据库操作（`app/Models/`）
+- **View**：展示数据和用户界面（`views/`）
+- **Controller**：处理请求和协调 Model 与 View（`app/Controllers/`）
+
 ### 添加新功能
-1. 在相应目录创建 PHP 文件
-2. 引入必要的公共模块（`auth.php`, `db.php`）
-3. 实现功能逻辑
-4. 创建对应的前端页面
+1. 在 `app/Controllers/` 创建控制器类
+2. 在 `app/Models/` 创建模型类（如需要）
+3. 在 `views/` 创建视图模板
+4. 在 `core/Router.php` 配置路由
 
 ### 自定义样式
-- 编辑 `assets/css/style.css` 修改全局样式
+- 编辑 `public/assets/css/style.css` 修改全局样式
 - 使用 CSS 变量统一管理颜色和间距
 
 ### 数据库操作
 - 使用 PDO 预处理语句防止 SQL 注入
 - 参考 `includes/db.php` 获取数据库连接
+- 模型类继承 `BaseModel` 实现数据库操作
 
 ## 许可证
 

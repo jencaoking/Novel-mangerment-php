@@ -15,19 +15,8 @@ class BaseModel {
     }
 
     protected function getConnection() {
-        static $instance = null;
-        if ($instance === null) {
-            require_once __DIR__ . '/../../includes/config.php';
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-            $options = [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
-            ];
-            $instance = new PDO($dsn, DB_USER, DB_PASS, $options);
-        }
-        return $instance;
+        require_once __DIR__ . '/../../includes/db.php';
+        return getDB();
     }
 
     public function find($id) {
@@ -89,6 +78,12 @@ class BaseModel {
 
     public function create(array $data) {
         $data = $this->filterFillable($data);
+        
+        // ✅ 新增：如果过滤后无数据，直接返回 false，避免生成错误 SQL
+        if (empty($data)) {
+            return false; 
+        }
+
         $columns = implode(", ", array_keys($data));
         $placeholders = ":" . implode(", :", array_keys($data));
         
@@ -101,15 +96,31 @@ class BaseModel {
 
     public function update($id, array $data) {
         $data = $this->filterFillable($data);
-        $updateParts = [];
-        foreach ($data as $column => $value) {
-            $updateParts[] = "{$column} = :{$column}";
+        
+        // ✅ 新增：剔除 $data 中可能包含的主键，防止更新主键或造成参数冲突
+        if (isset($data[$this->primaryKey])) {
+            unset($data[$this->primaryKey]);
         }
         
-        $sql = "UPDATE {$this->table} SET " . implode(", ", $updateParts) . " WHERE {$this->primaryKey} = :id";
+        // ✅ 新增：空数据校验
+        if (empty($data)) {
+            return false;
+        }
+
+        $updateParts = [];
+        $params = [];
+        foreach ($data as $column => $value) {
+            $updateParts[] = "{$column} = :{$column}";
+            // 规范化绑定参数的 key 带有冒号
+            $params[":{$column}"] = $value;
+        }
+        
+        // ✅ 修复：使用特殊占位符 :_pk_id 替代原来的 :id
+        $sql = "UPDATE {$this->table} SET " . implode(", ", $updateParts) . " WHERE {$this->primaryKey} = :_pk_id";
+        $params[':_pk_id'] = $id;
         
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute(array_merge($data, [':id' => $id]));
+        return $stmt->execute($params);
     }
 
     public function delete($id) {

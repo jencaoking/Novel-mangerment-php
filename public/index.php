@@ -83,6 +83,15 @@ try {
     $router->get('/payment/query/{orderId}', 'PaymentController@query', ['AuthMiddleware']);
     
     // ==========================================
+    // 2.6 购物车模块路由
+    // ==========================================
+    $router->get('/cart', 'CartController@index', ['AuthMiddleware']);
+    $router->post('/api/cart/add', 'CartController@add', ['AuthMiddleware']);
+    $router->post('/api/cart/remove', 'CartController@remove', ['AuthMiddleware']);
+    $router->post('/api/cart/clear', 'CartController@clear', ['AuthMiddleware']);
+    $router->post('/api/checkout/cart', 'PaymentController@checkoutCart', ['AuthMiddleware']);
+    
+    // ==========================================
     // 3. 用户中心路由（需要普通登录权限）
     // ==========================================
     $router->get('/user', 'UserController@index', ['AuthMiddleware']);
@@ -107,7 +116,7 @@ try {
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $router->dispatch($uri, $method);
-} catch (Exception $e) {
+} catch (\Throwable $e) {
     error_log("Application error: " . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
     http_response_code(500);
     echo "<h1>服务器内部错误</h1>";

@@ -25,7 +25,11 @@ class Router {
             $pattern = preg_replace('/\{([a-zA-Z0-9_]+)\}/', '(?P<\1>[a-zA-Z0-9_-]+)', $route);
             $pattern = '#^' . $pattern . '$#';
             if (preg_match($pattern, $parsedUri, $matches)) {
+                // 过滤出命名捕获组
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
+                
+                // ✅ 新增这一行：使用 array_values 清除字符串键名，变为按位置传参 [0 => '123']
+                $params = array_values($params); 
                 
                 $callback = $routeInfo['callback'];
                 $middlewares = $routeInfo['middlewares'];

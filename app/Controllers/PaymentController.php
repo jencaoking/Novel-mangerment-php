@@ -110,6 +110,23 @@ class PaymentController
             return;
         }
 
+        // 判断是否为批次订单（合并支付）
+        $isBatchOrder = strpos($outTradeNo, 'BATCH_') === 0;
+        
+        if ($isBatchOrder) {
+            // 批次订单处理逻辑
+            $this->handleBatchOrderNotify($outTradeNo, $tradeNo, $totalAmount);
+        } else {
+            // 单个订单处理逻辑
+            $this->handleSingleOrderNotify($outTradeNo, $tradeNo, $totalAmount);
+        }
+    }
+
+    /**
+     * 处理单个订单的异步通知
+     */
+    private function handleSingleOrderNotify($outTradeNo, $tradeNo, $totalAmount)
+    {
         // 查找订单
         $order = $this->orderModel->findByOrderNo($outTradeNo);
         if (!$order) {
@@ -118,7 +135,7 @@ class PaymentController
             return;
         }
 
-        // 幂等性检查：如果订单已支付，直接返回成功
+        // 幂等性检查
         if ($order['status'] === 'paid' || $order['status'] === 'completed') {
             error_log('支付宝异步通知：订单已支付，跳过处理 - ' . $outTradeNo);
             echo 'success';
@@ -145,6 +162,62 @@ class PaymentController
             
         } catch (\Exception $e) {
             error_log('支付宝异步通知：更新订单失败 - ' . $e->getMessage());
+            echo 'fail';
+        }
+    }
+
+    /**
+     * 处理批次订单的异步通知（合并支付）
+     */
+    private function handleBatchOrderNotify($batchTradeNo, $tradeNo, $totalAmount)
+    {
+        global $db;
+        
+        try {
+            // 获取批次下的所有订单
+            $sql = "SELECT id, product_id, price FROM orders WHERE trade_no = ? AND status = 'pending'";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$batchTradeNo]);
+            $orders = $stmt->fetchAll();
+            
+            if (empty($orders)) {
+                error_log('支付宝异步通知：批次订单不存在或已全部处理 - ' . $batchTradeNo);
+                echo 'success'; // 幂等性返回
+                return;
+            }
+            
+            // 验证总金额（可选，防止中间人攻击）
+            $expectedTotal = array_sum(array_column($orders, 'price'));
+            if (bccomp($expectedTotal, $totalAmount, 2) !== 0) {
+                error_log('支付宝异步通知：批次总金额不匹配 - 预期:' . $expectedTotal . ', 实际:' . $totalAmount);
+                echo 'fail';
+                return;
+            }
+            
+            // 事务更新所有订单状态
+            $db->beginTransaction();
+            
+            $updateStmt = $db->prepare("UPDATE orders SET status = 'paid', pay_time = ?, trade_no = CONCAT(trade_no, '_PAID') WHERE id = ?");
+            $payTime = date('Y-m-d H:i:s');
+            
+            foreach ($orders as $order) {
+                $updateStmt->execute([$payTime, $order['id']]);
+                
+                // 更新商品销量
+                $this->productModel->increaseSales($order['product_id']);
+            }
+            
+            $db->commit();
+            
+            error_log('支付宝异步通知：批次订单支付成功 - ' . $batchTradeNo . '，共' . count($orders) . '件商品');
+            echo 'success';
+            
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            
+            error_log('支付宝异步通知：批次订单更新失败 - ' . $e->getMessage());
             echo 'fail';
         }
     }
@@ -207,6 +280,112 @@ class PaymentController
             'price' => $order['price'],
             'pay_time' => $order['pay_time']
         ]);
+    }
+
+    /**
+     * 购物车合并结算 - 批次流水号模式
+     */
+    public function checkoutCart()
+    {
+        if (!isLoggedIn()) {
+            json_response(['success' => false, 'message' => '请先登录'], 401);
+        }
+
+        $userId = getCurrentUserId();
+        
+        // 1. 从 POST 获取选中的商品 ID 数组
+        $productIds = isset($_POST['product_ids']) ? $_POST['product_ids'] : [];
+        
+        if (empty($productIds)) {
+            json_response(['success' => false, 'message' => '请选择要结算的商品']);
+        }
+        
+        // 验证并过滤商品ID
+        $productIds = array_map('intval', $productIds);
+        $productIds = array_filter($productIds, function($id) {
+            return $id > 0;
+        });
+        
+        if (empty($productIds)) {
+            json_response(['success' => false, 'message' => '无效的商品ID']);
+        }
+        
+        try {
+            // 2. 获取购物车中选中的商品信息
+            global $db;
+            
+            // 构建 IN 查询的参数占位符
+            $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+            $sql = "SELECT p.id, p.price, p.title, p.type 
+                    FROM cart c 
+                    LEFT JOIN products p ON c.product_id = p.id 
+                    WHERE c.user_id = ? AND c.product_id IN ($placeholders)";
+            
+            $params = array_merge([$userId], $productIds);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $cartItems = $stmt->fetchAll();
+            
+            if (empty($cartItems)) {
+                json_response(['success' => false, 'message' => '购物车中没有选中的商品']);
+            }
+            
+            // 3. 计算总价并生成批次流水号
+            $totalAmount = array_sum(array_column($cartItems, 'price'));
+            $batchTradeNo = 'BATCH_' . date('YmdHis') . '_' . mt_rand(1000, 9999);
+            $orderTitles = '合并订单等' . count($cartItems) . '件商品';
+            
+            // 4. 事务处理：插入多条订单记录 + 清空选中购物车商品
+            $db->beginTransaction();
+            
+            $orderStmt = $db->prepare(
+                "INSERT INTO orders (user_id, product_id, price, trade_no, status) 
+                 VALUES (?, ?, ?, ?, 'pending')"
+            );
+            
+            foreach ($cartItems as $item) {
+                $orderStmt->execute([
+                    $userId, 
+                    $item['id'], 
+                    $item['price'], 
+                    $batchTradeNo
+                ]);
+            }
+            
+            // 清空选中的购物车商品
+            $deletePlaceholders = implode(',', array_fill(0, count($productIds), '?'));
+            $deleteSql = "DELETE FROM cart WHERE user_id = ? AND product_id IN ($deletePlaceholders)";
+            $deleteParams = array_merge([$userId], $productIds);
+            $db->prepare($deleteSql)->execute($deleteParams);
+            
+            $db->commit();
+            
+            // 5. 生成支付宝支付链接
+            // 使用批次号作为商户订单号，支付宝会原样返回
+            $payUrl = $this->alipaySDK->createPagePayUrl(
+                $batchTradeNo,
+                $totalAmount,
+                $orderTitles,
+                'BookMusic Mall - 合并支付'
+            );
+            
+            // 6. 返回 JSON 响应
+            json_response([
+                'success' => true,
+                'batch_trade_no' => $batchTradeNo,
+                'total_amount' => sprintf('%.2f', $totalAmount),
+                'pay_url' => $payUrl,
+                'item_count' => count($cartItems)
+            ]);
+            
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            
+            error_log('购物车结算失败: ' . $e->getMessage());
+            json_response(['success' => false, 'message' => '结算失败，请稍后再试']);
+        }
     }
 }
 

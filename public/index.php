@@ -10,6 +10,49 @@ require_once '../includes/db.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';
 
+// ==========================================
+// 🛡️ 全局异常与错误拦截网
+// ==========================================
+// 1. 关闭直接在页面显示错误（防止信息泄露）
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// 2. 捕获所有未被 catch 的异常
+set_exception_handler(function ($exception) {
+    // 将详细错误写入日志文件 (logs/error.log)
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true);
+    }
+    
+    $logMessage = sprintf(
+        "[%s] %s in %s on line %d\n",
+        date('Y-m-d H:i:s'),
+        $exception->getMessage(),
+        $exception->getFile(),
+        $exception->getLine()
+    );
+    error_log($logMessage, 3, $logDir . '/error.log');
+
+    // 清空可能已经输出的半截 HTML
+    if (ob_get_length()) ob_clean();
+    
+    // 给用户展示友好的 500 页面
+    http_response_code(500);
+    echo "<div style='text-align:center; margin-top:100px; font-family:sans-serif;'>";
+    echo "<h1>服务器开小差了 (500)</h1>";
+    echo "<p>系统遇到了一点小问题，工程师正在紧急抢修，请稍后再试。</p>";
+    echo "</div>";
+    exit;
+});
+
+// 3. 将普通的 PHP Error 转换为 Exception，统一交给上面的函数处理
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) { return; }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+// ==========================================
+
 try {
     $router = new \Core\Router();
     

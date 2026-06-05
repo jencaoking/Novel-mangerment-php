@@ -43,17 +43,15 @@ $total = $countStmt->fetchColumn();
 // 分页
 $pagination = paginate($total, $page);
 
-// 获取商品列表
+// 获取商品列表（分页参数直接拼接，避免PDO类型问题）
 $stmt = $db->prepare("
     SELECT p.*, c.name as category_name 
     FROM products p 
     LEFT JOIN categories c ON p.category_id = c.id 
     WHERE {$where}
     ORDER BY {$orderBy}
-    LIMIT ? OFFSET ?
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ");
-$params[] = $pagination['per_page'];
-$params[] = $pagination['offset'];
 $stmt->execute($params);
 $music = $stmt->fetchAll();
 

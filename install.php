@@ -71,10 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->exec($statement);
             }
             
-            // 创建管理员账号（使用用户设置的密码）
+            // 更新管理员密码（database.sql 已创建 admin 账号）
             $hashedPassword = password_hash($adminPassword, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT IGNORE INTO users (username, email, password, role, status) VALUES 
-                ('admin', 'admin@bookmusic.com', ?, 'admin', 1)");
+            $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE username = 'admin'");
             $stmt->execute([$hashedPassword]);
             
             $isInstalled = true;

@@ -3,6 +3,8 @@ namespace App\Controllers;
 
 class AdminController
 {
+    const PAID_STATUSES = ['paid', 'completed'];
+
     public function __construct()
     {
         requireAdmin();
@@ -16,8 +18,8 @@ class AdminController
             'totalUsers' => $db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
             'totalOrders' => $db->query("SELECT COUNT(*) FROM orders")->fetchColumn(),
             'totalProducts' => $db->query("SELECT COUNT(*) FROM products")->fetchColumn(),
-            'totalRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid'")->fetchColumn(),
-            'todayRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status = 'paid' AND DATE(create_time) = CURDATE()")->fetchColumn(),
+            'totalRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed')")->fetchColumn(),
+            'todayRevenue' => $db->query("SELECT COALESCE(SUM(price), 0) FROM orders WHERE status IN ('paid', 'completed') AND DATE(create_time) = CURDATE()")->fetchColumn(),
             'pendingOrders' => $db->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn()
         ];
 
@@ -37,7 +39,7 @@ class AdminController
     {
         global $db;
 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $type = $_GET['type'] ?? '';
         $search = $_GET['search'] ?? '';
 
@@ -75,7 +77,7 @@ class AdminController
     {
         global $db;
 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $search = $_GET['search'] ?? '';
 
         $where = '1=1';
@@ -109,7 +111,8 @@ class AdminController
             $userId = $_POST['user_id'] ?? 0;
 
             if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-                die('CSRF 验证失败');
+                $_SESSION['error'] = 'CSRF 验证失败';
+                redirect('/admin/users');
             }
 
             if ($action === 'toggle_status' && $userId) {
@@ -119,7 +122,8 @@ class AdminController
 
                 if ($user) {
                     if ($user['role'] === 'admin') {
-                        die('无法修改管理员状态');
+                        $_SESSION['error'] = '无法修改管理员状态';
+                        redirect('/admin/users');
                     }
                     $newStatus = $user['status'] == 1 ? 0 : 1;
                     $stmt = $db->prepare("UPDATE users SET status = ? WHERE id = ?");
@@ -135,13 +139,14 @@ class AdminController
     {
         global $db;
 
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $status = $_GET['status'] ?? '';
 
         $where = '1=1';
         $params = [];
 
-        if ($status) {
+        $allowedStatus = ['pending', 'paid', 'completed', 'cancelled'];
+        if ($status && in_array($status, $allowedStatus)) {
             $where .= ' AND o.status = ?';
             $params[] = $status;
         }
@@ -195,8 +200,21 @@ class AdminController
             $coverResult = null;
             $fileResult = null;
             $previewPath = null;
+            $fileDir = '';
 
             try {
+                if (!in_array($type, ['novel', 'music'])) {
+                    throw new \Exception('非法类型');
+                }
+
+                if (empty($_FILES['cover']['tmp_name']) || $_FILES['cover']['error'] !== UPLOAD_ERR_OK) {
+                    throw new \Exception('缺少封面图片');
+                }
+
+                if (empty($_FILES['file']['tmp_name']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                    throw new \Exception('缺少商品文件');
+                }
+
                 // 3. 上传封面图片
                 $coverResult = uploadFile($_FILES['cover'], $uploadDir . 'cover/', ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE);
                 if (!$coverResult['success']) {
@@ -246,15 +264,15 @@ class AdminController
                 if ($coverResult && isset($coverResult['filename'])) {
                     @unlink($uploadDir . 'cover/' . $coverResult['filename']);
                 }
-                if ($fileResult && isset($fileResult['filename'])) {
+                if ($fileResult && isset($fileResult['filename']) && $fileDir) {
                     @unlink($uploadDir . $fileDir . $fileResult['filename']);
                 }
                 if ($previewPath) {
                     @unlink($uploadDir . 'preview/' . $previewPath);
                 }
 
-                // 输出错误信息（建议后续将错误存入 Session 后重定向）
-                die('添加商品失败: ' . $e->getMessage());
+                $_SESSION['error'] = '添加商品失败: ' . $e->getMessage();
+                redirect('/admin/products');
             }
         }
 

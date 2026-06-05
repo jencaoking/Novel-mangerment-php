@@ -20,6 +20,7 @@ class ProductController {
         }
 
         if (!empty($search)) {
+            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
             $where .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -73,6 +74,7 @@ class ProductController {
         }
 
         if (!empty($search)) {
+            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
             $where .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -174,7 +176,9 @@ class ProductController {
                 redirect('/login.php');
             }
             
-            if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            if ($hasPurchased) {
+                $message = '您已购买此商品';
+            } elseif (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
                 $message = '安全验证失败';
             } else {
                 $orderNo = generateOrderNo();
@@ -185,18 +189,9 @@ class ProductController {
                 
                 try {
                     $stmt->execute([$orderNo, getCurrentUserId(), $productId, $product['price']]);
-                    $orderId = $db->lastInsertId();
-                    
-                    $stmt = $db->prepare("UPDATE orders SET status = 'paid', pay_time = NOW() WHERE id = ?");
-                    $stmt->execute([$orderId]);
-                    
-                    $stmt = $db->prepare("UPDATE products SET sales = sales + 1 WHERE id = ?");
-                    $stmt->execute([$productId]);
-                    
-                    $message = '购买成功！';
-                    $hasPurchased = true;
+                    $message = '订单创建成功，请完成支付';
                 } catch (PDOException $e) {
-                    $message = '购买失败，请稍后再试';
+                    $message = '创建订单失败，请稍后再试';
                 }
             }
         }

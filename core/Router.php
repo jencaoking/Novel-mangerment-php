@@ -23,7 +23,21 @@ class Router {
                 if (is_string($callback) && strpos($callback, '@') !== false) {
                     list($controllerName, $methodName) = explode('@', $callback);
                     $controllerClass = "App\\Controllers\\" . $controllerName;
+
+                    // 检查类是否存在
+                    if (!class_exists($controllerClass)) {
+                        $this->sendNotFound();
+                        return;
+                    }
+
                     $controllerInstance = new $controllerClass();
+
+                    // 检查方法是否存在
+                    if (!method_exists($controllerInstance, $methodName)) {
+                        $this->sendNotFound();
+                        return;
+                    }
+
                     return call_user_func_array([$controllerInstance, $methodName], $params);
                 }
                 if (is_callable($callback)) {
@@ -36,5 +50,6 @@ class Router {
     protected function sendNotFound() {
         http_response_code(404);
         echo "<h1>404 Not Found</h1><p>The page you are looking for does not exist.</p>";
+        exit;
     }
 }

@@ -83,7 +83,7 @@ class UserController
         $user = $this->getUser();
 
         $stmt = $db->prepare("
-            SELECT o.*, p.title, p.cover_image 
+            SELECT o.*, p.title, p.cover 
             FROM orders o 
             LEFT JOIN products p ON o.product_id = p.id 
             WHERE o.user_id = ? 

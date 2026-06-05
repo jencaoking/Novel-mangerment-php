@@ -289,3 +289,33 @@ function getUserStatusText($status) {
 function getUserStatusBadge($status) {
     return $status == 1 ? 'success' : 'danger';
 }
+
+/**
+ * 使用 Resend API 发送邮件
+ * @param string $to 收件人邮箱
+ * @param string $subject 邮件主题
+ * @param string $htmlContent HTML 内容
+ * @param string $from 发件人邮箱（可选，默认使用 onboarding@resend.dev）
+ * @return array 发送结果
+ */
+function sendEmailWithResend($to, $subject, $htmlContent, $from = 'onboarding@resend.dev') {
+    require_once __DIR__ . '/ResendSDK.php';
+    
+    if (RESEND_API_KEY === 're_xxxxxxxxx') {
+        return [
+            'success' => false,
+            'message' => '请先配置 RESEND_API_KEY'
+        ];
+    }
+    
+    $resend = new ResendSDK(RESEND_API_KEY);
+    
+    $params = [
+        'from' => $from,
+        'to' => [$to], // Resend API 需要数组格式
+        'subject' => $subject,
+        'html' => $htmlContent
+    ];
+    
+    return $resend->sendEmail($params);
+}

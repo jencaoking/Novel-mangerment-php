@@ -44,6 +44,9 @@ define('ALIPAY_CHARSET', 'UTF-8');
 define('ALIPAY_FORMAT', 'json');
 define('ALIPAY_VERSION', '1.0');
 
+// Resend 邮件服务配置
+define('RESEND_API_KEY', getenv('RESEND_API_KEY') ?: 're_cg1AZ5pn_HU6FgqKeGb348jzUufc6ck9i');
+
 date_default_timezone_set('Asia/Shanghai');
 
 // 开发环境显示错误，生产环境记录日志

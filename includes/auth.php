@@ -77,9 +77,41 @@ function register($username, $email, $password) {
             'status' => 1
         ]);
         
+        // 发送欢迎邮件
+        sendWelcomeEmail($username, $email);
+        
         return ['success' => true, 'user_id' => $userId];
     } catch (\PDOException $e) {
         return ['success' => false, 'message' => '注册失败，请稍后再试'];
+    }
+}
+
+/**
+ * 发送欢迎邮件
+ */
+function sendWelcomeEmail($username, $email) {
+    $welcomeHtml = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+            <h2 style='color: #333;'>欢迎加入 BookMusic Mall!</h2>
+            <p>亲爱的 {$username}，</p>
+            <p>感谢您注册我们的平台。现在您可以：</p>
+            <ul>
+                <li>浏览精选小说和音乐</li>
+                <li>购买您喜欢的数字内容</li>
+                <li>享受优质的阅读和听觉体验</li>
+            </ul>
+            <p>祝您使用愉快！</p>
+            <hr>
+            <p style='color: #999; font-size: 12px;'>BookMusic Mall 团队</p>
+        </div>
+    ";
+    
+    // 异步发送邮件，避免阻塞注册流程
+    try {
+        sendEmailWithResend($email, '欢迎加入 BookMusic Mall', $welcomeHtml);
+    } catch (\Exception $e) {
+        // 记录错误但不影响注册流程
+        error_log('欢迎邮件发送失败: ' . $e->getMessage());
     }
 }
 

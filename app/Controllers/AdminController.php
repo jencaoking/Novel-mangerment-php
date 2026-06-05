@@ -169,6 +169,7 @@ class AdminController
         $action = $_POST['action'] ?? '';
 
         if ($action === 'add_product') {
+            $productId = (int)($_POST['product_id'] ?? 0);
             $type = $_POST['type'] ?? '';
             $title = $_POST['title'] ?? '';
             $categoryId = (int)($_POST['category_id'] ?? 0);
@@ -183,7 +184,7 @@ class AdminController
             $fileDir = '';
 
             try {
-                if (!in_array($type, ['novel', 'music'])) {
+                if ($productId <= 0 && !in_array($type, ['novel', 'music'])) {
                     throw new \Exception('非法类型');
                 }
 

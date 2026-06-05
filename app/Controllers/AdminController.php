@@ -160,6 +160,33 @@ class AdminController
 
     public function stats()
     {
+        $monthlyStats = $this->orderModel->getMonthlyStats(6);
+        
+        // 处理数据格式，确保有6个月的数据
+        $labels = [];
+        $revenueData = [];
+        $orderData = [];
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $month = date('Y-m', strtotime("-$i months"));
+            $labels[] = date('n月', strtotime($month . '-01'));
+            
+            $found = false;
+            foreach ($monthlyStats as $stat) {
+                if ($stat['month'] === $month) {
+                    $revenueData[] = (float)$stat['revenue'];
+                    $orderData[] = (int)$stat['order_count'];
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                $revenueData[] = 0;
+                $orderData[] = 0;
+            }
+        }
+        
         require __DIR__ . '/../../views/admin/stats.phtml';
     }
 

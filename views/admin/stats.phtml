@@ -19,24 +19,29 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const statsCtx = document.getElementById('statsChart');
 if (statsCtx) {
+    const labels = <?= json_encode($labels, JSON_UNESCAPED_UNICODE) ?>;
+    const revenueData = <?= json_encode($revenueData) ?>;
+    const orderData = <?= json_encode($orderData) ?>;
+    
     new Chart(statsCtx, {
         type: 'bar',
         data: {
-            labels: ['一月', '二月', '三月', '四月', '五月', '六月'],
+            labels: labels,
             datasets: [
                 {
                     label: '销售额',
-                    data: [12000, 19000, 15000, 25000, 22000, 30000],
+                    data: revenueData,
                     backgroundColor: 'rgba(13, 110, 253, 0.7)',
                     borderColor: '#0d6efd',
                     borderWidth: 1
                 },
                 {
                     label: '订单数',
-                    data: [120, 190, 150, 250, 220, 300],
+                    data: orderData,
                     backgroundColor: 'rgba(25, 135, 84, 0.7)',
                     borderColor: '#198754',
                     borderWidth: 1

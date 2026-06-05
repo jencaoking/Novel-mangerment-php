@@ -78,7 +78,7 @@
             <ul class="pagination justify-content-center mb-0">
                 <?php if ($pagination['has_previous']): ?>
                 <li class="page-item">
-                    <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] - 1; ?>
+                    <?php $allowedParams = array_intersect_key($_GET, array_flip(['search'])); $queryParams = $allowedParams; $queryParams['page'] = $pagination['current_page'] - 1; ?>
                     <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                         <i class="bi bi-chevron-left"></i>
                     </a>
@@ -87,7 +87,7 @@
 
                 <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                 <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                    <?php $queryParams = $_GET; $queryParams['page'] = $i; ?>
+                    <?php $allowedParams = array_intersect_key($_GET, array_flip(['search'])); $queryParams = $allowedParams; $queryParams['page'] = $i; ?>
                     <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                         <?= $i ?>
                     </a>
@@ -96,7 +96,7 @@
 
                 <?php if ($pagination['has_next']): ?>
                 <li class="page-item">
-                    <?php $queryParams = $_GET; $queryParams['page'] = $pagination['current_page'] + 1; ?>
+                    <?php $allowedParams = array_intersect_key($_GET, array_flip(['search'])); $queryParams = $allowedParams; $queryParams['page'] = $pagination['current_page'] + 1; ?>
                     <a class="page-link" href="?<?= http_build_query($queryParams) ?>">
                         <i class="bi bi-chevron-right"></i>
                     </a>

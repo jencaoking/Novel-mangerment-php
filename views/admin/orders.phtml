@@ -64,7 +64,7 @@
                             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                             <input type="hidden" name="action" value="update_status">
                             <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                            <select name="status" class="form-select form-select-sm d-inline" style="width: auto;" onchange="this.form.submit()">
+                            <select name="status" class="form-select form-select-sm d-inline" style="width: auto;" onchange="if(confirm('确认修改订单状态？')) this.form.submit(); else this.value = this.dataset.original;" data-original="<?= $order['status'] ?>">
                                 <option value="pending" <?= $order['status'] === 'pending' ? 'selected' : '' ?>>待支付</option>
                                 <option value="paid" <?= $order['status'] === 'paid' ? 'selected' : '' ?>>已支付</option>
                                 <option value="completed" <?= $order['status'] === 'completed' ? 'selected' : '' ?>>已完成</option>
@@ -83,7 +83,7 @@
             <ul class="pagination justify-content-center mb-0">
                 <?php if ($pagination['has_previous']): ?>
                 <li class="page-item">
-                    <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= isset($status) && $status ? '&status=' . $status : '' ?>">
+                    <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?><?= isset($status) && $status ? '&status=' . urlencode($status) : '' ?>">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                 </li>
@@ -91,7 +91,7 @@
 
                 <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
                 <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                    <a class="page-link" href="?page=<?= $i ?><?= isset($status) && $status ? '&status=' . $status : '' ?>">
+                    <a class="page-link" href="?page=<?= $i ?><?= isset($status) && $status ? '&status=' . urlencode($status) : '' ?>">
                         <?= $i ?>
                     </a>
                 </li>
@@ -99,7 +99,7 @@
 
                 <?php if ($pagination['has_next']): ?>
                 <li class="page-item">
-                    <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= isset($status) && $status ? '&status=' . $status : '' ?>">
+                    <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?><?= isset($status) && $status ? '&status=' . urlencode($status) : '' ?>">
                         <i class="bi bi-chevron-right"></i>
                     </a>
                 </li>

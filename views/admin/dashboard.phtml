@@ -3,7 +3,7 @@
 
 <div class="page-header">
     <h1 class="page-title">仪表盘</h1>
-    <p class="page-description">欢迎回来，<?= e($_SESSION['username']) ?></p>
+    <p class="page-description">欢迎回来，<?= e($_SESSION['username'] ?? '管理员') ?></p>
 </div>
 
 <div class="stats-grid">
@@ -120,15 +120,12 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const ctx = document.getElementById('salesChart');
 if (ctx) {
-    const labels = [];
-    const data = [];
-    <?php foreach ($dailyOrderStats as $stat): ?>
-        labels.push('<?= substr($stat['date'], 5) ?>');
-        data.push(<?= $stat['count'] ?>);
-    <?php endforeach; ?>
+    const labels = <?= json_encode(array_column($dailyOrderStats, 'date'), JSON_UNESCAPED_UNICODE) ?>.map(date => date.substring(5));
+    const data = <?= json_encode(array_column($dailyOrderStats, 'count')) ?>;
     
     new Chart(ctx, {
         type: 'line',

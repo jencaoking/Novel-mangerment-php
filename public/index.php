@@ -92,6 +92,11 @@ try {
     $router->post('/api/checkout/cart', 'PaymentController@checkoutCart', ['AuthMiddleware']);
     
     // ==========================================
+    // 2.7 批次订单状态查询路由
+    // ==========================================
+    $router->get('/api/order/status', 'PaymentController@queryBatchStatus', ['AuthMiddleware']);
+    
+    // ==========================================
     // 3. 用户中心路由（需要普通登录权限）
     // ==========================================
     $router->get('/user', 'UserController@index', ['AuthMiddleware']);

@@ -283,6 +283,79 @@ class PaymentController
     }
 
     /**
+     * 查询批次订单支付状态（用于前端轮询）
+     */
+    public function queryBatchStatus()
+    {
+        if (!isLoggedIn()) {
+            json_response(['success' => false, 'message' => '请先登录'], 401);
+        }
+
+        $batchTradeNo = isset($_GET['batch_trade_no']) ? $_GET['batch_trade_no'] : '';
+        
+        if (empty($batchTradeNo) || strpos($batchTradeNo, 'BATCH_') !== 0) {
+            json_response(['success' => false, 'message' => '无效的批次号']);
+        }
+
+        try {
+            global $db;
+            
+            // 查询该批次下所有订单的状态
+            $sql = "SELECT id, status, pay_time FROM orders WHERE trade_no = ? AND user_id = ?";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$batchTradeNo, getCurrentUserId()]);
+            $orders = $stmt->fetchAll();
+            
+            if (empty($orders)) {
+                json_response(['success' => false, 'message' => '批次订单不存在']);
+            }
+            
+            // 检查是否所有订单都已支付
+            $allPaid = true;
+            $anyPaid = false;
+            
+            foreach ($orders as $order) {
+                if ($order['status'] !== 'paid') {
+                    $allPaid = false;
+                } else {
+                    $anyPaid = true;
+                }
+            }
+            
+            // 返回批次支付状态
+            if ($allPaid) {
+                json_response([
+                    'success' => true,
+                    'status' => 'paid',
+                    'batch_trade_no' => $batchTradeNo,
+                    'order_count' => count($orders),
+                    'message' => '支付成功'
+                ]);
+            } elseif ($anyPaid) {
+                json_response([
+                    'success' => true,
+                    'status' => 'partial_paid',
+                    'batch_trade_no' => $batchTradeNo,
+                    'order_count' => count($orders),
+                    'message' => '部分订单已支付'
+                ]);
+            } else {
+                json_response([
+                    'success' => true,
+                    'status' => 'pending',
+                    'batch_trade_no' => $batchTradeNo,
+                    'order_count' => count($orders),
+                    'message' => '等待支付'
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            error_log('查询批次订单状态失败: ' . $e->getMessage());
+            json_response(['success' => false, 'message' => '查询失败，请稍后再试']);
+        }
+    }
+
+    /**
      * 购物车合并结算 - 批次流水号模式
      */
     public function checkoutCart()

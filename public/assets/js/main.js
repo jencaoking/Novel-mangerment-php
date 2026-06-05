@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initFormValidation();
     // initSearch(); // 已禁用：使用表单搜索代替 AJAX 搜索
     lazyLoadImages();
+    initCartHelpers(); // 购物车辅助功能
 });
 
 /**
@@ -426,3 +427,124 @@ animationStyles.textContent = `
     }
 `;
 document.head.appendChild(animationStyles);
+
+/**
+ * 购物车辅助功能
+ */
+function initCartHelpers() {
+    // 为所有"加入购物车"按钮绑定事件
+    const addToCartButtons = document.querySelectorAll('[data-add-to-cart]');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            const productId = this.dataset.productId || this.dataset.addToCart;
+            
+            if (!productId) {
+                showNotification('商品ID无效', 'error');
+                return;
+            }
+            
+            // 防连击
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>加入中...';
+            
+            try {
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `product_id=${productId}`
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message || '已加入购物车', 'success');
+                    
+                    // 更新导航栏购物车数量（如果有）
+                    updateCartCount(data.cart_count);
+                } else {
+                    showNotification(data.message || '加入失败', 'error');
+                }
+            } catch (err) {
+                console.error('加入购物车失败:', err);
+                showNotification('网络错误，请稍后再试', 'error');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+    });
+}
+
+/**
+ * 更新购物车数量显示
+ */
+function updateCartCount(count) {
+    const cartBadge = document.querySelector('.cart-badge, [data-cart-count]');
+    if (cartBadge) {
+        cartBadge.textContent = count;
+        if (count === 0) {
+            cartBadge.style.display = 'none';
+        } else {
+            cartBadge.style.display = 'inline-block';
+        }
+    }
+}
+
+/**
+ * 显示通知消息（增强版）
+ */
+function showNotification(message, type = 'info') {
+    // 如果已有通知，先移除
+    const existing = document.querySelector('.notification');
+    if (existing) {
+        existing.remove();
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    // 根据类型设置图标
+    const icons = {
+        success: '<i class="bi bi-check-circle-fill"></i>',
+        error: '<i class="bi bi-x-circle-fill"></i>',
+        info: '<i class="bi bi-info-circle-fill"></i>',
+        warning: '<i class="bi bi-exclamation-triangle-fill"></i>'
+    };
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span class="notification-icon">${icons[type] || icons.info}</span>
+            <span class="notification-message">${message}</span>
+        </div>
+    `;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${type === 'success' ? '#4a9d7c' : type === 'error' ? '#d64f4f' : type === 'warning' ? '#f39c12' : '#5b8dbd'};
+        color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        max-width: 400px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}

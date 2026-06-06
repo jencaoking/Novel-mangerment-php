@@ -41,9 +41,16 @@ class Database {
     // 防止克隆
     private function __clone() {}
     
-    // 防止反序列化
     public function __wakeup() {
-        throw new Exception("Cannot unserialize singleton");
+        throw new \Exception("Cannot unserialize singleton");
+    }
+    
+    public function __serialize(): array {
+        throw new \Exception("Cannot serialize singleton");
+    }
+    
+    public function __unserialize(array $data): void {
+        throw new \Exception("Cannot unserialize singleton");
     }
 }
 

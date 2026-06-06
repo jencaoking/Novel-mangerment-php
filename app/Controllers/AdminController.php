@@ -280,9 +280,94 @@ class AdminController
 
                 $_SESSION['error'] = '添加商品失败: ' . $e->getMessage();
                 redirect('/admin/products');
+        }
+    }
+
+    public function toggleProductStatus()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'CSRF 验证失败';
+            } else {
+                $productId = (int)($_POST['product_id'] ?? 0);
+                if ($productId > 0) {
+                    $this->productModel->toggleStatus($productId);
+                    $_SESSION['success'] = '商品状态更新成功！';
+                }
             }
         }
-
         redirect('/admin/products');
+    }
+
+    public function deleteProduct()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'CSRF 验证失败';
+            } else {
+                $productId = (int)($_POST['product_id'] ?? 0);
+                $product = $this->productModel->find($productId);
+                
+                if ($product) {
+                    try {
+                        $this->productModel->delete($productId);
+                        
+                        $uploadDir = UPLOAD_PATH;
+                        $fileDir = $product['type'] === 'novel' ? 'novels/' : 'music/';
+                        
+                        @unlink($uploadDir . 'cover/' . $product['cover']);
+                        @unlink($uploadDir . $fileDir . $product['file_path']);
+                        if (!empty($product['preview_path'])) {
+                            @unlink($uploadDir . 'preview/' . $product['preview_path']);
+                        }
+                        
+                        $_SESSION['success'] = '商品及对应文件已成功删除！';
+                    } catch (\PDOException $e) {
+                        $_SESSION['error'] = '该商品已有相关订单或下载记录，无法直接删除。建议使用【下架】功能。';
+                    }
+                }
+            }
+        }
+        redirect('/admin/products');
+    }
+
+    public function editProduct($id)
+    {
+        $product = $this->productModel->find((int)$id);
+        if (!$product) {
+            $_SESSION['error'] = '商品不存在';
+            redirect('/admin/products');
+            return;
+        }
+        
+        $categories = $this->categoryModel->getAllCategories();
+        require __DIR__ . '/../../views/admin/product_edit.phtml';
+    }
+
+    public function updateProduct($id)
+    {
+        $productId = (int)$id;
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+                $_SESSION['error'] = 'CSRF 验证失败';
+            } else {
+                $data = [
+                    'title' => trim($_POST['title'] ?? ''),
+                    'author' => trim($_POST['author'] ?? ''),
+                    'category_id' => (int)($_POST['category_id'] ?? 0),
+                    'price' => (float)($_POST['price'] ?? 0),
+                    'description' => trim($_POST['description'] ?? '')
+                ];
+                
+                if ($this->productModel->update($productId, $data)) {
+                    $_SESSION['success'] = '商品信息修改成功！';
+                    redirect('/admin/products');
+                    return;
+                } else {
+                    $_SESSION['error'] = '修改失败，请重试。';
+                }
+            }
+        }
+        redirect("/admin/products/edit/{$productId}");
     }
 }

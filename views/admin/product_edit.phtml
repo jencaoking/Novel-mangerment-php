@@ -1,0 +1,67 @@
+<?php require __DIR__ . '/_header.phtml'; ?>
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">编辑商品</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/admin/dashboard">仪表盘</a></li>
+        <li class="breadcrumb-item"><a href="/admin/products">商品管理</a></li>
+        <li class="breadcrumb-item active">编辑：<?= htmlspecialchars($product['title']) ?></li>
+    </ol>
+
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+    <?php endif; ?>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white">
+            <i class="bi bi-pencil-square me-1"></i> 修改商品基础信息
+        </div>
+        <div class="card-body">
+            <form action="/admin/products/edit/<?= $product['id'] ?>" method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">商品名称</label>
+                        <input type="text" class="form-control" name="title" value="<?= htmlspecialchars($product['title']) ?>" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">作者/歌手</label>
+                        <input type="text" class="form-control" name="author" value="<?= htmlspecialchars($product['author']) ?>">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">商品分类</label>
+                        <select class="form-select" name="category_id">
+                            <?php foreach ($categories as $cat): ?>
+                                <?php if($cat['type'] === $product['type']): ?>
+                                    <option value="<?= $cat['id'] ?>" <?= $cat['id'] == $product['category_id'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($cat['name']) ?>
+                                    </option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">售价 (元)</label>
+                        <input type="number" step="0.01" class="form-control" name="price" value="<?= $product['price'] ?>" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">商品简介</label>
+                    <textarea class="form-control" name="description" rows="4"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="/admin/products" class="btn btn-secondary">返回列表</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> 保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<?php require __DIR__ . '/_footer.phtml'; ?>

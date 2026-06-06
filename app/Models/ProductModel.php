@@ -212,4 +212,9 @@ class ProductModel extends BaseModel {
         $sql = "UPDATE {$this->table} SET sales = sales + 1 WHERE id = ?";
         return $this->execute($sql, [$productId]);
     }
+
+    public function toggleStatus($id) {
+        $sql = "UPDATE {$this->table} SET status = 1 - status WHERE id = ?";
+        return $this->execute($sql, [$id]);
+    }
 }

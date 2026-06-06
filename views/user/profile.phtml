@@ -30,7 +30,7 @@
                     <?php endif; ?>
 
                     <form action="/user/profile" method="POST" enctype="multipart/form-data">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCSRFToken()) ?>">
                         
                         <div class="text-center mb-4">
                             <div class="position-relative d-inline-block">

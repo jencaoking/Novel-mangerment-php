@@ -142,6 +142,13 @@ try {
     // ==========================================
     $router->get('/admin/dashboard', 'AdminController@dashboard', ['AdminMiddleware']);
     $router->get('/admin/products', 'AdminController@products', ['AdminMiddleware']);
+
+    // 商品上下架、编辑和删除的路由
+    $router->post('/admin/products/toggle_status', 'AdminController@toggleProductStatus', ['AdminMiddleware']);
+    $router->get('/admin/products/edit/{id}', 'AdminController@editProduct', ['AdminMiddleware']);
+    $router->post('/admin/products/edit/{id}', 'AdminController@updateProduct', ['AdminMiddleware']);
+    $router->post('/admin/products/delete', 'AdminController@deleteProduct', ['AdminMiddleware']);
+
     $router->get('/admin/users', 'AdminController@users', ['AdminMiddleware']);
     $router->post('/admin/users', 'AdminController@toggleUserStatus', ['AdminMiddleware']);
     $router->get('/admin/orders', 'AdminController@orders', ['AdminMiddleware']);

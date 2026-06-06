@@ -74,22 +74,33 @@
                         </span>
                     </td>
                     <td>
-                        <form method="POST" action="/admin/products" style="display: inline;">
-                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                            <input type="hidden" name="action" value="toggle_status">
-                            <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-warning">
-                                <i class="bi bi-toggle-<?= $product['status'] == 1 ? 'off' : 'on' ?>"></i>
-                            </button>
-                        </form>
-                        <form method="POST" style="display: inline;" onsubmit="return confirm('确定要删除吗？');">
-                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <a href="/admin/products/edit/<?= $product['id'] ?>" class="btn btn-sm btn-outline-primary" title="编辑">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </a>
+
+                            <form action="/admin/products/toggle_status" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                                <?php if ($product['status'] == 1): ?>
+                                    <button type="submit" class="btn btn-sm btn-warning" title="点击下架">
+                                        <i class="bi bi-arrow-down-circle"></i> 下架
+                                    </button>
+                                <?php else: ?>
+                                    <button type="submit" class="btn btn-sm btn-success" title="点击上架">
+                                        <i class="bi bi-arrow-up-circle"></i> 上架
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+
+                            <form action="/admin/products/delete" method="POST" class="d-inline" onsubmit="return confirm('警告：确定要彻底删除该商品吗？此操作不可逆！\n(注：已有订单的商品建议使用下架功能)');">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-danger" title="删除">
+                                    <i class="bi bi-trash"></i> 删除
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>

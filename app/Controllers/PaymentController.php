@@ -171,7 +171,7 @@ class PaymentController
      */
     private function handleBatchOrderNotify($batchTradeNo, $tradeNo, $totalAmount)
     {
-        global $db;
+        $db = getDB();
         
         try {
             // 获取批次下的所有订单
@@ -298,8 +298,8 @@ class PaymentController
         }
 
         try {
-            global $db;
-            
+            $db = getDB();
+
             // 查询该批次下所有订单的状态
             $sql = "SELECT id, status, pay_time FROM orders WHERE trade_no = ? AND user_id = ?";
             $stmt = $db->prepare($sql);
@@ -385,7 +385,7 @@ class PaymentController
         
         try {
             // 2. 获取购物车中选中的商品信息
-            global $db;
+            $db = getDB();
             
             // 构建 IN 查询的参数占位符
             $placeholders = implode(',', array_fill(0, count($productIds), '?'));

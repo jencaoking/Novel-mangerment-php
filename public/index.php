@@ -99,6 +99,7 @@ try {
     // ==========================================
     // 2. 认证模块路由（登录/注册/登出）
     // ==========================================
+    $router->get('/captcha', 'AuthController@captcha');
     $router->get('/login', 'AuthController@showLogin');
     $router->post('/login', 'AuthController@processLogin');
     $router->get('/register', 'AuthController@showRegister');

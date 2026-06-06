@@ -65,6 +65,18 @@
                                placeholder="输入密码">
                     </div>
                     
+                    <div class="form-group">
+                        <label for="captcha">验证码</label>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" name="captcha" id="captcha" required 
+                                   class="flex-1"
+                                   placeholder="请输入验证码">
+                            <img src="/captcha" alt="验证码" class="w-24 h-[38px] rounded cursor-pointer border"
+                                 onclick="this.src='/captcha?'+Math.random()"
+                                 title="点击刷新验证码">
+                        </div>
+                    </div>
+                    
                     <div class="form-group form-checkbox">
                         <label>
                             <input type="checkbox" name="remember" id="remember" 
@@ -148,6 +160,27 @@
             border-radius: var(--radius-md);
             font-size: 1rem;
             transition: all var(--transition-fast);
+        }
+        
+        .form-group .flex {
+            display: flex;
+        }
+        
+        .form-group .items-center {
+            align-items: center;
+        }
+        
+        .form-group .space-x-4 {
+            gap: 1rem;
+        }
+        
+        .form-group .flex-1 {
+            flex: 1;
+        }
+        
+        .form-group .captcha-img {
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
         }
         
         .form-group input:focus {

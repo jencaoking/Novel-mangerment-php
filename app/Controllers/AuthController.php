@@ -26,11 +26,16 @@ class AuthController
             } else {
                 $username = trim($_POST['username'] ?? '');
                 $password = $_POST['password'] ?? '';
+                $captcha = strtoupper(trim($_POST['captcha'] ?? ''));
                 $remember = isset($_POST['remember']);
 
-                if (empty($username) || empty($password)) {
-                    $error = '请填写用户名和密码';
+                if (empty($username) || empty($password) || empty($captcha)) {
+                    $error = '请填写用户名、密码和验证码';
+                } elseif (!isset($_SESSION['captcha']) || $captcha !== $_SESSION['captcha']) {
+                    $error = '验证码错误，请重新输入';
+                    unset($_SESSION['captcha']);
                 } else {
+                    unset($_SESSION['captcha']);
                     $result = login($username, $password, $remember);
 
                     if ($result['success']) {
@@ -79,9 +84,13 @@ class AuthController
                 $email = trim($_POST['email'] ?? '');
                 $password = $_POST['password'] ?? '';
                 $confirmPassword = $_POST['confirm_password'] ?? '';
+                $captcha = strtoupper(trim($_POST['captcha'] ?? ''));
 
-                if (empty($username) || empty($email) || empty($password)) {
-                    $error = '请填写所有必填字段';
+                if (empty($username) || empty($email) || empty($password) || empty($captcha)) {
+                    $error = '请填写所有必填字段和验证码';
+                } elseif (!isset($_SESSION['captcha']) || $captcha !== $_SESSION['captcha']) {
+                    $error = '验证码错误，请重新输入';
+                    unset($_SESSION['captcha']);
                 } elseif (!isValidUsername($username)) {
                     $error = '用户名格式不正确（3-20个字符，支持中文、英文、数字和下划线）';
                 } elseif (!isValidEmail($email)) {
@@ -109,5 +118,35 @@ class AuthController
     {
         logout();
         redirect('/');
+    }
+
+    public function captcha()
+    {
+        $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $captchaCode = substr(str_shuffle($characters), 0, 4);
+        
+        $_SESSION['captcha'] = strtoupper($captchaCode);
+
+        $image = imagecreatetruecolor(100, 38);
+        
+        $bgColor = imagecolorallocate($image, 243, 244, 246);
+        $textColor = imagecolorallocate($image, 59, 130, 246);
+        
+        imagefill($image, 0, 0, $bgColor);
+        
+        for ($i = 0; $i < 6; $i++) {
+            $lineColor = imagecolorallocate($image, rand(150, 220), rand(150, 220), rand(150, 220));
+            imageline($image, rand(0, 100), rand(0, 38), rand(0, 100), rand(0, 38), $lineColor);
+        }
+        
+        imagestring($image, 5, 30, 12, $captchaCode, $textColor);
+        
+        ob_clean();
+        header('Content-Type: image/png');
+        header('Cache-Control: no-cache, must-revalidate');
+        
+        imagepng($image);
+        imagedestroy($image);
+        exit;
     }
 }

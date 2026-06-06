@@ -12,8 +12,8 @@ if (defined('SENTRY_DSN') && !empty(SENTRY_DSN)) {
         'dsn' => SENTRY_DSN,
         // 环境标识：development, staging, production
         'environment' => SENTRY_ENVIRONMENT,
-        // 性能追踪采样率 (0.0-1.0)，1.0 = 100% 采样
-        'traces_sample_rate' => 1.0,
+        // 性能追踪采样率 (0.0-1.0)，生产环境建议 0.1-0.2 以减少性能开销
+        'traces_sample_rate' => 0.1,
         // 性能分析采样率（相对于 traces_sample_rate）
         'profiles_sample_rate' => 1.0,
         // 启用日志发送到 Sentry

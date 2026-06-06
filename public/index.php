@@ -134,6 +134,10 @@ try {
     $router->get('/user', 'UserController@index', ['AuthMiddleware']);
     $router->get('/user/profile', 'UserController@profile', ['AuthMiddleware']);
     $router->post('/user/profile', 'UserController@updateProfile', ['AuthMiddleware']);
+    
+    // 处理修改密码的请求
+    $router->post('/user/change-password', 'UserController@changePassword', ['AuthMiddleware']);
+    
     $router->get('/user/orders', 'UserController@orders', ['AuthMiddleware']);
     $router->get('/user/downloads', 'UserController@downloads', ['AuthMiddleware']);
     

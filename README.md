@@ -252,8 +252,12 @@ bookmusic/
 - ⚠️ 日志记录和监控
 - ⚠️ 更多的安全防护措施
 
-**相关文档：**
-- [支付宝支付集成说明](PAYMENT_README.md)
-- [Resend 邮件服务集成指南](RESEND_README.md)
-- [Sentry 错误监控集成指南](SENTRY_INTEGRATION.md)
-- [项目计划与功能清单](Plan.md)
+**📚 相关文档**
+
+| 文档 | 说明 |
+|------|------|
+| [支付宝支付集成说明](PAYMENT_README.md) | 支付宝支付完整配置指南和使用说明 |
+| [Resend 邮件服务集成指南](RESEND_README.md) | 邮件通知服务配置和API使用 |
+| [Sentry 错误监控集成指南](SENTRY_README.md) | 错误监控和性能追踪配置 |
+| [项目计划与功能清单](Plan.md) | 项目架构设计和功能规划 |
+| [购物车支付测试清单](CART_PAYMENT_TEST.md) | 购物车合并支付功能测试用例 |

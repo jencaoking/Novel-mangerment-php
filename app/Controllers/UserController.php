@@ -101,4 +101,47 @@ class UserController
 
         require __DIR__ . '/../../views/user/downloads.phtml';
     }
+
+    /**
+     * 处理修改密码请求
+     */
+    public function changePassword()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // 1. CSRF 安全验证
+            if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+                $_SESSION['error'] = '安全验证失败';
+            } else {
+                $oldPassword = $_POST['old_password'] ?? '';
+                $newPassword = $_POST['new_password'] ?? '';
+                $confirmPassword = $_POST['confirm_password'] ?? '';
+
+                $user = $this->getUser();
+
+                // 2. 表单基础验证
+                if (empty($oldPassword) || empty($newPassword) || empty($confirmPassword)) {
+                    $_SESSION['error'] = '请填写所有密码字段';
+                } elseif (!password_verify($oldPassword, $user['password'])) {
+                    // 3. 验证原密码是否正确
+                    $_SESSION['error'] = '原密码不正确';
+                } elseif (strlen($newPassword) < 6) {
+                    $_SESSION['error'] = '新密码至少需要6个字符';
+                } elseif ($newPassword !== $confirmPassword) {
+                    $_SESSION['error'] = '两次输入的新密码不一致';
+                } else {
+                    // 4. 加密新密码并更新到数据库
+                    $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+                    
+                    if ($this->userModel->update($user['id'], ['password' => $hashedPassword])) {
+                        $_SESSION['success'] = '密码修改成功！下次登录请使用新密码。';
+                    } else {
+                        $_SESSION['error'] = '密码修改失败，请稍后再试';
+                    }
+                }
+            }
+        }
+        
+        // 完成后重定向回个人资料页，提示信息会在页面顶部显示
+        redirect('/user/profile');
+    }
 }

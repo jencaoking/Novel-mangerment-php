@@ -154,7 +154,7 @@ class ProductController {
         $maxDailyDownloads = 5;
         $dailyCount = $this->downloadModel->getDailyDownloadCountByOrder($order['id']);
         
-        if ($dailyCount >= $maxDailyDownloads) {
+        if ($dailyCount + 1 > $maxDailyDownloads) {
             http_response_code(429);
             die("为了保护资源安全，同一订单每日最多可下载 {$maxDailyDownloads} 次。您今日的下载次数已用完，请明天再来。");
         }

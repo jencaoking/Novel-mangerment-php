@@ -411,13 +411,15 @@ class PaymentController
             // 4. 事务处理：插入多条订单记录 + 清空选中购物车商品
             $db->beginTransaction();
             
+            // 修复：order_no 在 orders 表中为 UNIQUE NOT NULL，合并支付时必须为每条订单单独生成
             $orderStmt = $db->prepare(
-                "INSERT INTO orders (user_id, product_id, price, trade_no, status) 
-                 VALUES (?, ?, ?, ?, 'pending')"
+                "INSERT INTO orders (order_no, user_id, product_id, price, trade_no, status) 
+                 VALUES (?, ?, ?, ?, ?, 'pending')"
             );
             
             foreach ($cartItems as $item) {
                 $orderStmt->execute([
+                    generateOrderNo(),
                     $userId, 
                     $item['id'], 
                     $item['price'], 

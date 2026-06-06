@@ -10,13 +10,21 @@ $dotenv->load();
 if (defined('SENTRY_DSN') && !empty(SENTRY_DSN)) {
     \Sentry\init([
         'dsn' => SENTRY_DSN,
+        // 环境标识：development, staging, production
         'environment' => SENTRY_ENVIRONMENT,
-        // 指定固定的采样率
+        // 性能追踪采样率 (0.0-1.0)，1.0 = 100% 采样
         'traces_sample_rate' => 1.0,
-        // 设置性能分析的采样率 - 相对于 traces_sample_rate
+        // 性能分析采样率（相对于 traces_sample_rate）
         'profiles_sample_rate' => 1.0,
         // 启用日志发送到 Sentry
         'enable_logs' => true,
+        // 发布版本标识（可选）
+        // 'release' => 'bookmusic@1.0.0',
+        // 在发送前过滤或修改事件（可选）
+        // 'before_send' => function (\Sentry\Event $event): ?\Sentry\Event {
+        //     // 移除敏感信息
+        //     return $event;
+        // },
     ]);
 }
 // ==========================================

@@ -288,6 +288,8 @@ class AdminController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
                 $_SESSION['error'] = 'CSRF 验证失败';
+                redirect('/admin/products');
+                return;
             } else {
                 $productId = (int)($_POST['product_id'] ?? 0);
                 if ($productId > 0) {
@@ -304,6 +306,8 @@ class AdminController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
                 $_SESSION['error'] = 'CSRF 验证失败';
+                redirect('/admin/products');
+                return;
             } else {
                 $productId = (int)($_POST['product_id'] ?? 0);
                 $product = $this->productModel->find($productId);
@@ -350,6 +354,8 @@ class AdminController
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
                 $_SESSION['error'] = 'CSRF 验证失败';
+                redirect("/admin/products/edit/{$productId}");
+                return;
             } else {
                 $data = [
                     'title' => trim($_POST['title'] ?? ''),
@@ -365,6 +371,8 @@ class AdminController
                     return;
                 } else {
                     $_SESSION['error'] = '修改失败，请重试。';
+                    redirect("/admin/products/edit/{$productId}");
+                    return;
                 }
             }
         }

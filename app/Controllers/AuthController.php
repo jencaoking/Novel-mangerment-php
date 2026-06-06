@@ -122,6 +122,10 @@ class AuthController
 
     public function captcha()
     {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
         $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         $captchaCode = substr(str_shuffle($characters), 0, 4);
         

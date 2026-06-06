@@ -1,12 +1,19 @@
-<?php
-namespace App\Controllers;
-class HomeController {
-    public function index() {
-        echo "<h1>Welcome to BookMusic Mall</h1>";
-        echo "<p>This is from Controller</p>";
-    }
-    public function show($id) {
-        echo "<h1>Product Detail</h1>";
-        echo "<p>Product ID: " . htmlspecialchars($id) . "</p>";
-    }
+<?php 
+namespace App\Controllers; 
+
+use App\Models\ProductModel; 
+
+class HomeController { 
+    protected $productModel; 
+
+    public function __construct() { 
+        $this->productModel = new ProductModel(); 
+    } 
+
+    public function index() { 
+        $novels = $this->productModel->getProductsWithFilter('novel', 0, '', 'latest', 1, 8); 
+        $music = $this->productModel->getProductsWithFilter('music', 0, '', 'latest', 1, 8); 
+
+        require __DIR__ . '/../../views/index.phtml'; 
+    } 
 }

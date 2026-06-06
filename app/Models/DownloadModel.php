@@ -33,4 +33,22 @@ class DownloadModel extends BaseModel {
                 LIMIT ?, ?";
         return $this->fetchAll($sql, [$userId, $offset, $perPage]);
     }
+
+    /**
+     * 获取指定订单今日的下载次数
+     * @param  int $orderId 订单ID
+     * @return  int 今日下载次数
+     */
+    public function getDailyDownloadCountByOrder($orderId) {
+        $today = date('Y-m-d');
+        
+        $sql = "SELECT COUNT(*) as count 
+                FROM {$this->table}  
+                WHERE order_id = ? 
+                AND DATE(create_time) = ?";
+                
+        $result = $this->fetch($sql, [$orderId, $today]);
+        
+        return $result ? (int)$result['count'] : 0;
+    }
 }

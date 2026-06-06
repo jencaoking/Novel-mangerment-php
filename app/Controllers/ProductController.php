@@ -148,6 +148,18 @@ class ProductController {
             die('您尚未购买此商品，无权下载');
         }
 
+        // ==========================================
+        // 3.5 限制同一订单每日下载次数（新增防刷逻辑）
+        // ==========================================
+        $maxDailyDownloads = 5;
+        $dailyCount = $this->downloadModel->getDailyDownloadCountByOrder($order['id']);
+        
+        if ($dailyCount >= $maxDailyDownloads) {
+            http_response_code(429);
+            die("为了保护资源安全，同一订单每日最多可下载 {$maxDailyDownloads} 次。您今日的下载次数已用完，请明天再来。");
+        }
+        // ==========================================
+
         // 4. 确定文件路径
         $fileDir = $product['type'] === 'novel' ? 'novels/' : 'music/';
         $filePath = UPLOAD_PATH . $fileDir . $product['file_path'];

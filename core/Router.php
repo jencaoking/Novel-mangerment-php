@@ -3,7 +3,7 @@ namespace Core;
 class Router {
     protected $routes = [];
     protected $container;
-    public function __construct(\Core\Container $container = null) {
+    public function __construct(?\Core\Container $container = null) {
         $this->container = $container ?: new \Core\Container();
     }
 

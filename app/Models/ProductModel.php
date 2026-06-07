@@ -23,7 +23,7 @@ class ProductModel extends BaseModel {
         return " LIMIT ?, ?";
     }
 
-    private function buildCountQuery(string $tableAlias = null): string {
+    private function buildCountQuery(?string $tableAlias = null): string {
         $tableName = $tableAlias ? "{$this->table} {$tableAlias}" : $this->table;
         return "SELECT COUNT(*) as total FROM {$tableName}";
     }

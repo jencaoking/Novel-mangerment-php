@@ -85,13 +85,24 @@ class PaymentController
             return;
         }
 
+        // 验证 app_id 是否匹配
+        $notifyAppId = $data['app_id'] ?? '';
+        if ($notifyAppId !== ALIPAY_APP_ID) {
+            error_log('支付宝异步通知：app_id 不匹配 - 收到:' . $notifyAppId . ', 期望:' . ALIPAY_APP_ID);
+            echo 'fail';
+            return;
+        }
+
         $outTradeNo = $data['out_trade_no'] ?? '';
         $tradeNo = $data['trade_no'] ?? '';
         $tradeStatus = $data['trade_status'] ?? '';
         $totalAmount = $data['total_amount'] ?? '0';
 
+        // 只有 TRADE_SUCCESS 和 TRADE_FINISHED 才表示支付成功
         if ($tradeStatus !== 'TRADE_SUCCESS' && $tradeStatus !== 'TRADE_FINISHED') {
-            echo 'success';
+            // 对于未成功的交易，不返回 success 让支付宝继续重试
+            error_log('支付宝异步通知：交易未成功 status=' . $tradeStatus);
+            echo 'fail';
             return;
         }
 
@@ -198,8 +209,17 @@ class PaymentController
             redirect('/user/orders');
         }
 
+        // 验证 app_id 是否匹配
+        $returnAppId = $data['app_id'] ?? '';
+        if ($returnAppId !== ALIPAY_APP_ID) {
+            error_log('支付宝同步返回：app_id 不匹配 - 收到:' . $returnAppId . ', 期望:' . ALIPAY_APP_ID);
+            $_SESSION['error'] = '支付验证失败';
+            redirect('/user/orders');
+        }
+
         $outTradeNo = $data['out_trade_no'] ?? '';
         $tradeNo = $data['trade_no'] ?? '';
+        $tradeStatus = $data['trade_status'] ?? '';
 
         $order = $this->orderModel->findByOrderNo($outTradeNo);
         
@@ -208,10 +228,15 @@ class PaymentController
             redirect('/user/orders');
         }
 
+        // 同步返回结果不可靠，根据本地订单状态判断
+        // 只有本地订单状态已经是 paid 或 completed 才显示成功
         if ($order['status'] === 'paid' || $order['status'] === 'completed') {
             $_SESSION['success'] = '支付成功！';
-        } else {
+        } elseif ($order['status'] === 'pending') {
+            // 订单仍为 pending，同步返回结果不可靠，提示用户等待异步通知
             $_SESSION['info'] = '支付处理中，请稍后查看订单状态';
+        } else {
+            $_SESSION['error'] = '订单状态异常';
         }
 
         redirect('/user/orders');

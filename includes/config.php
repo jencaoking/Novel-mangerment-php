@@ -35,6 +35,14 @@ define('SESSION_LIFETIME', 7200);
 define('HASH_COST', 12);
 define('CSRF_TOKEN_NAME', 'csrf_token');
 
+// 支付宝支付配置
+define('ALIPAY_APP_ID', '');
+define('ALIPAY_PRIVATE_KEY', '');
+define('ALIPAY_PUBLIC_KEY', '');
+define('ALIPAY_GATEWAY_URL', 'https://openapi.alipay.com/gateway.do');
+define('ALIPAY_RETURN_URL', SITE_URL . 'payment/return');
+define('ALIPAY_NOTIFY_URL', SITE_URL . 'payment/notify');
+
 // 分页配置
 define('ITEMS_PER_PAGE', 12);
 

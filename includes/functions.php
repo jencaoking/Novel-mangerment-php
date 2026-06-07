@@ -21,9 +21,9 @@ function e($string) {
  */
 function escapeLike($keyword) {
     // 先转义反斜杠，再转义通配符
-    // 这样可以确保用户输入的 \、% 和 _ 都被正确转义
+    // 这样可以确保用户输入的 \、%、_ 和 [ 都被正确转义
     $keyword = addcslashes($keyword, '\\');
-    $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
+    $keyword = str_replace(['%', '_', '['], ['\%', '\_', '\['], $keyword);
     return $keyword;
 }
 

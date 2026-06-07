@@ -2,6 +2,11 @@
 namespace Core;
 class Router {
     protected $routes = [];
+    protected $container;
+    public function __construct(\Core\Container $container = null) {
+        $this->container = $container ?: new \Core\Container();
+    }
+
     public function get($uri, $callback, $middlewares = []) {
         $this->routes['GET'][$uri] = [
             'callback' => $callback,
@@ -63,7 +68,7 @@ class Router {
                         return;
                     }
 
-                    $controllerInstance = new $controllerClass();
+                    $controllerInstance = $this->container->get($controllerClass);
 
                     // 检查方法是否存在
                     if (!method_exists($controllerInstance, $methodName)) {

@@ -84,7 +84,8 @@ set_error_handler(function ($severity, $message, $file, $line) {
 // ==========================================
 
 try {
-    $router = new \Core\Router();
+    $container = new \Core\Container();
+    $router = new \Core\Router($container);
     
     // ==========================================
     // 1. 前台公开路由（商品模块）

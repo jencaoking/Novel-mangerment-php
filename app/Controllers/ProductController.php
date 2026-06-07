@@ -15,12 +15,18 @@ class ProductController {
     protected $downloadModel;
     protected $reviewModel;
 
-    public function __construct() {
-        $this->productModel = new ProductModel();
-        $this->categoryModel = new CategoryModel();
-        $this->orderModel = new OrderModel();
-        $this->downloadModel = new DownloadModel();
-        $this->reviewModel = new ReviewModel();
+    public function __construct(
+        ProductModel $productModel,
+        CategoryModel $categoryModel,
+        OrderModel $orderModel,
+        DownloadModel $downloadModel,
+        ReviewModel $reviewModel
+    ) {
+        $this->productModel = $productModel;
+        $this->categoryModel = $categoryModel;
+        $this->orderModel = $orderModel;
+        $this->downloadModel = $downloadModel;
+        $this->reviewModel = $reviewModel;
     }
     
     public function novels() {

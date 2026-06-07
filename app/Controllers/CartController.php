@@ -8,9 +8,12 @@ class CartController {
     protected $cartModel;
     protected $productModel;
 
-    public function __construct() {
-        $this->cartModel = new CartModel();
-        $this->productModel = new ProductModel();
+    public function __construct(
+        CartModel $cartModel,
+        ProductModel $productModel
+    ) {
+        $this->cartModel = $cartModel;
+        $this->productModel = $productModel;
     }
 
     public function index() {

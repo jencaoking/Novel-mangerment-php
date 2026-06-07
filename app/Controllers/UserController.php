@@ -9,10 +9,12 @@ class UserController
     protected $userModel;
     protected $orderModel;
 
-    public function __construct()
-    {
-        $this->userModel = new UserModel();
-        $this->orderModel = new OrderModel();
+    public function __construct(
+        UserModel $userModel,
+        OrderModel $orderModel
+    ) {
+        $this->userModel = $userModel;
+        $this->orderModel = $orderModel;
     }
 
     private function getUser()

@@ -17,13 +17,18 @@ class AdminController
     protected $categoryModel;
     protected $reviewModel;
 
-    public function __construct()
-    {
-        $this->userModel = new UserModel();
-        $this->productModel = new ProductModel();
-        $this->orderModel = new OrderModel();
-        $this->categoryModel = new CategoryModel();
-        $this->reviewModel = new ReviewModel();
+    public function __construct(
+        UserModel $userModel,
+        ProductModel $productModel,
+        OrderModel $orderModel,
+        CategoryModel $categoryModel,
+        ReviewModel $reviewModel
+    ) {
+        $this->userModel = $userModel;
+        $this->productModel = $productModel;
+        $this->orderModel = $orderModel;
+        $this->categoryModel = $categoryModel;
+        $this->reviewModel = $reviewModel;
     }
 
     public function dashboard()

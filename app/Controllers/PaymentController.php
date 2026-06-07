@@ -10,11 +10,13 @@ class PaymentController
     protected $productModel;
     protected $alipaySDK;
 
-    public function __construct()
-    {
+    public function __construct(
+        OrderModel $orderModel,
+        ProductModel $productModel
+    ) {
         require_once __DIR__ . '/../../includes/AlipaySDK.php';
-        $this->orderModel = new OrderModel();
-        $this->productModel = new ProductModel();
+        $this->orderModel = $orderModel;
+        $this->productModel = $productModel;
         $this->alipaySDK = new \AlipaySDK();
     }
 

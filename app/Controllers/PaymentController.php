@@ -247,6 +247,7 @@ class PaymentController
         
         if (empty($batchTradeNo) || strpos($batchTradeNo, 'BATCH_') !== 0) {
             json_response(['success' => false, 'message' => '无效的批次号']);
+            exit();
         }
 
         try {
@@ -259,6 +260,7 @@ class PaymentController
             
             if (empty($orders)) {
                 json_response(['success' => false, 'message' => '批次订单不存在']);
+                exit();
             }
             
             $allPaid = true;
@@ -316,6 +318,7 @@ class PaymentController
         
         if (!is_array($productIds) || empty($productIds)) {
             json_response(['success' => false, 'message' => '请选择要结算的商品']);
+            exit();
         }
         
         $productIds = array_map('intval', $productIds);
@@ -325,6 +328,7 @@ class PaymentController
         
         if (empty($productIds)) {
             json_response(['success' => false, 'message' => '无效的商品ID']);
+            exit();
         }
         
         try {

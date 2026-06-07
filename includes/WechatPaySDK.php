@@ -4,8 +4,6 @@
  * 基于官方 wechatpay/wechatpay V3 SDK
  */
 
-namespace App\Includes;
-
 use WeChatPay\Builder;
 use WeChatPay\Crypto\Rsa;
 use WeChatPay\Util\PemUtil;
@@ -19,11 +17,26 @@ class WechatPaySDK
 
     public function __construct()
     {
+        // 检查必要的配置常量是否已定义
+        if (!defined('WECHAT_MCH_ID') || !defined('WECHAT_APP_ID') || 
+            !defined('WECHAT_API_V3_KEY') || !defined('WECHAT_CERT_SERIAL') ||
+            !defined('WECHAT_PRIVATE_KEY_PATH') || !defined('WECHAT_CERT_PATH') ||
+            !defined('WECHAT_PLATFORM_CERT_SERIAL') || !defined('WECHAT_NOTIFY_URL')) {
+            throw new \Exception('微信支付配置不完整，请检查 includes/config.php 中的 WECHAT_* 配置项');
+        }
+
         $this->mchId = WECHAT_MCH_ID;
         $this->appId = WECHAT_APP_ID;
         $this->notifyUrl = WECHAT_NOTIFY_URL;
 
         // 构造商户私钥
+        if (!file_exists(WECHAT_PRIVATE_KEY_PATH)) {
+            throw new \Exception('微信支付商户私钥文件不存在: ' . WECHAT_PRIVATE_KEY_PATH);
+        }
+        if (!file_exists(WECHAT_CERT_PATH)) {
+            throw new \Exception('微信支付平台证书文件不存在: ' . WECHAT_CERT_PATH);
+        }
+
         $merchantPrivateKeyInstance = Rsa::from(
             file_get_contents(WECHAT_PRIVATE_KEY_PATH),
             Rsa::KEY_TYPE_PRIVATE

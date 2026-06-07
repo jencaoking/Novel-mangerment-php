@@ -179,7 +179,11 @@ class BaseModel {
 
     protected function query($sql, $params = []) {
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $type = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue(is_int($key) ? $key + 1 : $key, $value, $type);
+        }
+        $stmt->execute();
         return $stmt;
     }
 

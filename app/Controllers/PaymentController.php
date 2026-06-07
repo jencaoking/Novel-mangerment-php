@@ -15,7 +15,7 @@ class PaymentController
         OrderModel $orderModel,
         ProductModel $productModel,
         \AlipaySDK $alipaySDK,
-        \App\Includes\WechatPaySDK $wechatPaySDK
+        \WechatPaySDK $wechatPaySDK
     ) {
         $this->orderModel = $orderModel;
         $this->productModel = $productModel;

@@ -1,623 +1,840 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>购物车 - BookMusic Mall</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-content">
-                <a href="/" class="navbar-brand">
-                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 2C10.06 2 2 10.06 2 20s8.06 18 18 18 18-8.06 18-18S29.94 2 20 2zm0 4c7.73 0 14 6.27 14 14s-6.27 14-14 14S6 25.73 6 20 12.27 6 20 6zm-4 6v16l12-8-12-8z"/>
-                    </svg>
-                    <span>BookMusic Mall</span>
-                </a>
-                <ul class="navbar-nav">
-                    <li><a href="/">首页</a></li>
-                    <li><a href="/novels">小说</a></li>
-                    <li><a href="/music">音乐</a></li>
-                </ul>
-                <div class="navbar-actions">
-                    <a href="/user/" class="btn btn-secondary">用户中心</a>
-                    <a href="/logout" class="btn btn-outline">退出</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<?php require __DIR__ . '/../_header.phtml'; ?>
 
-    <section class="user-center">
-        <div class="container">
-            <div class="user-layout">
-                <div class="user-sidebar">
-                    <div class="user-info">
-                        <img src="/uploads/avatar/<?= e($user['avatar'] ?: 'default.jpg') ?>" 
-                             alt="<?= e($user['username']) ?>" class="user-avatar">
-                        <h3><?= e($user['username']) ?></h3>
-                        <p><?= e($user['email']) ?></p>
-                    </div>
-                    <nav class="user-nav">
-                        <a href="/cart" class="active">购物车</a>
-                        <a href="/user/orders">我的订单</a>
-                        <a href="/user/profile">个人资料</a>
-                        <a href="/user/downloads">我的下载</a>
-                    </nav>
+<section class="cart-page-section">
+    <div class="container">
+        <nav class="breadcrumb" style="margin-bottom: 1.5rem;">
+            <a href="/" class="breadcrumb-item">首页</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active" aria-current="page">购物车</span>
+        </nav>
+        
+        <h1 class="cart-page-title">
+            <i class="bi bi-cart3"></i> 我的购物车
+        </h1>
+        
+        <?php if (empty($cartItems)): ?>
+            <div class="empty-cart-container">
+                <div class="empty-cart-icon">
+                    <i class="bi bi-cart-x"></i>
                 </div>
-                
-                <div class="user-content cart-page">
-                    <div class="cart-header">
-                        <h1>购物车</h1>
-                        <?php if (!empty($cartItems)): ?>
-                            <button type="button" class="btn btn-outline btn-sm" onclick="clearCart()">清空购物车</button>
-                        <?php endif; ?>
+                <h2 class="empty-cart-title">购物车是空的</h2>
+                <p class="empty-cart-text">快去挑选心仪的商品吧！</p>
+                <a href="/" class="btn btn-primary btn-large">
+                    <i class="bi bi-shop"></i> 去逛逛
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="cart-layout">
+                <div class="cart-items-container">
+                    <div class="cart-header-bar">
+                        <label class="select-all-label">
+                            <input type="checkbox" id="selectAll" class="cart-checkbox" 
+                                   <?php echo $allSelected ? 'checked' : ''; ?>
+                                   onchange="toggleSelectAll()">
+                            <span class="select-all-text">全选</span>
+                        </label>
+                        <div class="cart-header-info">商品信息</div>
+                        <div class="cart-header-type">类型</div>
+                        <div class="cart-header-price">价格</div>
+                        <div class="cart-header-action">操作</div>
                     </div>
                     
-                    <?php if (empty($cartItems)): ?>
-                        <div class="empty-cart">
-                            <svg width="100" height="100" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                            <p class="empty-message">购物车是空的</p>
-                            <a href="/" class="btn btn-primary">去逛逛</a>
-                        </div>
-                    <?php else: ?>
-                        <div class="cart-table-wrapper">
-                            <table class="cart-table">
-                                <thead>
-                                    <tr>
-                                        <th width="50">
-                                            <input type="checkbox" id="selectAll" checked onchange="toggleSelectAll()">
-                                        </th>
-                                        <th>商品信息</th>
-                                        <th width="120">类型</th>
-                                        <th width="120">价格</th>
-                                        <th width="100">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($cartItems as $item): ?>
-                                        <tr data-product-id="<?= $item['product_id'] ?>">
-                                            <td>
-                                                <input type="checkbox" class="product-checkbox" 
-                                                       value="<?= $item['product_id'] ?>" 
-                                                       checked 
-                                                       onchange="updateSummary()">
-                                            </td>
-                                            <td>
-                                                <div class="cart-item">
-                                                    <img src="/uploads/cover/<?= e($item['cover'] ?: 'default.jpg') ?>" 
-                                                         alt="<?= e($item['title']) ?>">
-                                                    <div class="cart-item-info">
-                                                        <h4><?= e($item['title']) ?></h4>
-                                                        <p class="cart-item-time">加入时间：<?= timeAgo($item['create_time']) ?></p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="type-badge type-<?= $item['type'] ?>">
-                                                    <?= getProductTypeText($item['type']) ?>
-                                                </span>
-                                            </td>
-                                            <td class="price"><?= formatPrice($item['price']) ?></td>
-                                            <td>
-                                                <button type="button" class="btn btn-outline btn-sm" 
-                                                        onclick="removeItem(<?= $item['product_id'] ?>)">
-                                                    移除
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                    <div class="cart-items-list">
+                        <?php foreach ($cartItems as $item): ?>
+                            <div class="cart-item-card" data-product-id="<?php echo $item['product_id']; ?>">
+                                <div class="cart-item-select">
+                                    <input type="checkbox" class="cart-checkbox product-checkbox" 
+                                           value="<?php echo $item['product_id']; ?>"
+                                           <?php echo in_array($item['product_id'], $selectedIds) ? 'checked' : ''; ?>
+                                           onchange="updateSummary()">
+                                </div>
+                                
+                                <div class="cart-item-info">
+                                    <img src="/uploads/cover/<?php echo htmlspecialchars($item['cover'] ?: 'default.jpg'); ?>" 
+                                         alt="<?php echo htmlspecialchars($item['title']); ?>" 
+                                         class="cart-item-image">
+                                    <div class="cart-item-details">
+                                        <h3 class="cart-item-title">
+                                            <?php echo htmlspecialchars($item['title']); ?>
+                                        </h3>
+                                        <p class="cart-item-meta">
+                                            <i class="bi bi-person"></i> <?php echo htmlspecialchars($item['author']); ?>
+                                        </p>
+                                        <p class="cart-item-time">
+                                            <i class="bi bi-clock"></i> 加入于 <?php echo timeAgo($item['create_time']); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="cart-item-type">
+                                    <span class="type-badge <?php echo $item['type'] == 'novel' ? 'type-novel' : 'type-music'; ?>">
+                                        <?php echo getProductTypeText($item['type']); ?>
+                                    </span>
+                                </div>
+                                
+                                <div class="cart-item-price">
+                                    <span class="price-value">¥<?php echo number_format($item['price'], 2); ?></span>
+                                </div>
+                                
+                                <div class="cart-item-action">
+                                    <button class="btn btn-outline btn-small" 
+                                            onclick="removeItem(<?php echo $item['product_id']; ?>)">
+                                        <i class="bi bi-trash"></i> 移除
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <div class="cart-footer-bar">
+                        <div class="cart-footer-left">
+                            <label class="select-all-label">
+                                <input type="checkbox" id="selectAllBottom" class="cart-checkbox"
+                                       <?php echo $allSelected ? 'checked' : ''; ?>
+                                       onchange="toggleSelectAll()">
+                                <span class="select-all-text">全选</span>
+                            </label>
+                            <button type="button" class="btn btn-outline btn-small" onclick="clearCart()">
+                                <i class="bi bi-trash2"></i> 清空购物车
+                            </button>
                         </div>
                         
-                        <div class="cart-summary">
-                            <div class="summary-left">
-                                <label class="select-all-label">
-                                    <input type="checkbox" id="selectAllBottom" checked onchange="toggleSelectAll()">
-                                    全选
-                                </label>
-                                <span class="selected-text">已选 <strong id="selectedCount"><?= count($cartItems) ?></strong> 件商品</span>
-                                <span class="total-text">合计：<strong id="totalAmount"><?= formatPrice($totalPrice) ?></strong></span>
+                        <div class="cart-footer-right">
+                            <div class="cart-summary-info">
+                                已选 <span class="summary-count" id="selectedCount"><?php echo count($selectedIds); ?></span> 件
+                                <span class="summary-divider">|</span>
+                                合计：<span class="summary-price" id="totalAmount">¥<?php echo number_format($totalPrice, 2); ?></span>
                             </div>
-                            <div class="summary-right">
-                                <button type="button" class="btn btn-success btn-lg" onclick="checkout()">
-                                    合并结算
-                                </button>
-                            </div>
+                            <button type="button" class="btn btn-primary btn-large" onclick="checkout()">
+                                <i class="bi bi-credit-card"></i> 合并结算
+                            </button>
                         </div>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        <?php endif; ?>
+    </div>
+</section>
 
-    <!-- 支付宝扫码支付模态框 -->
-    <div id="alipayModal" class="modal" style="display:none;">
-        <div class="modal-content modal-sm">
+<!-- 支付宝扫码支付模态框 -->
+<div id="alipayModal" class="modal-overlay">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="bi bi-qr-code-scan"></i> 支付宝合并结算</h3>
-                <button type="button" class="modal-close" onclick="closeAlipayModal()">&times;</button>
+                <h3 class="modal-title">
+                    <i class="bi bi-qr-code-scan"></i> 支付宝合并结算
+                </h3>
+                <button type="button" class="modal-close" onclick="closeAlipayModal()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
-            <div class="modal-body text-center">
+            <div class="modal-body">
                 <div class="pay-amount-display">
-                    <span class="amount-label">待支付金额</span>
-                    <div class="amount-value">¥<span id="payAmount">0.00</span></div>
+                    <span class="pay-amount-label">待支付金额</span>
+                    <span class="pay-amount-value">¥<span id="payAmount">0.00</span></span>
                 </div>
                 
-                <div class="qrcode-container" id="qrcodeContainer">
-                    <img id="alipayQrcode" src="" alt="支付宝二维码" style="max-width: 100%;">
+                <div class="qrcode-wrapper">
+                    <img id="alipayQrcode" src="" alt="支付宝二维码" class="qrcode-image">
                     <div id="qrcodeLoading" class="qrcode-loading">
-                        <div class="spinner-border text-primary"></div>
-                        <p>正在生成二维码...</p>
+                        <div class="spinner-border"></div>
+                        <p class="loading-text">正在生成二维码...</p>
                     </div>
                 </div>
                 
-                <div class="pay-status" id="payStatusText">
-                    <div class="status-waiting">
+                <div class="pay-status-indicator">
+                    <div id="payStatusText" class="status-waiting">
                         <i class="bi bi-hourglass-split"></i>
                         <span>等待扫码支付...</span>
                     </div>
                 </div>
                 
                 <div class="pay-tips">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> 
-                        请使用支付宝扫描二维码完成支付
-                    </small>
+                    <i class="bi bi-info-circle"></i>
+                    <small>请使用支付宝扫描二维码完成支付</small>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="/assets/js/main.js"></script>
-    <script>
-        // 全局变量：轮询定时器
-        let cartPayTimer = null;
-        let currentBatchTradeNo = null;
-        
-        // 初始化购物车功能
-        document.addEventListener('DOMContentLoaded', function() {
-            initCartFunctions();
-        });
-        
-        function initCartFunctions() {
-            // 绑定全选/取消全选
-            const selectAllTop = document.getElementById('selectAll');
-            const selectAllBottom = document.getElementById('selectAllBottom');
-            
-            if (selectAllTop) {
-                selectAllTop.addEventListener('change', toggleSelectAll);
-            }
-            if (selectAllBottom) {
-                selectAllBottom.addEventListener('change', toggleSelectAll);
-            }
-            
-            // 绑定所有商品复选框
-            document.querySelectorAll('.product-checkbox').forEach(cb => {
-                cb.addEventListener('change', updateSummary);
-            });
-            
-            // 监听模态框背景点击关闭
-            const alipayModal = document.getElementById('alipayModal');
-            if (alipayModal) {
-                alipayModal.addEventListener('click', function(e) {
-                    if (e.target === this) {
-                        closeAlipayModal();
-                    }
-                });
-            }
-        }
-        
-        // 全选/取消全选
-        function toggleSelectAll() {
-            const selectAllTop = document.getElementById('selectAll');
-            const selectAllBottom = document.getElementById('selectAllBottom');
-            const checkboxes = document.querySelectorAll('.product-checkbox');
-            
-            const isChecked = selectAllTop.checked || selectAllBottom.checked;
-            
-            selectAllTop.checked = isChecked;
-            selectAllBottom.checked = isChecked;
-            
-            checkboxes.forEach(cb => cb.checked = isChecked);
-            
-            updateSummary();
-        }
-        
-        // 更新统计信息
-        function updateSummary() {
-            const checkboxes = document.querySelectorAll('.product-checkbox:checked');
-            const rows = document.querySelectorAll('tbody tr');
-            
-            let selectedCount = 0;
-            let totalPrice = 0;
-            
-            checkboxes.forEach(cb => {
-                const productId = cb.value;
-                const row = document.querySelector(`tr[data-product-id="${productId}"]`);
-                if (row) {
-                    const priceCell = row.querySelector('.price');
-                    const price = parseFloat(priceCell.textContent.replace('¥', '').replace(',', ''));
-                    totalPrice += price;
-                    selectedCount++;
-                }
-            });
-            
-            document.getElementById('selectedCount').textContent = selectedCount;
-            document.getElementById('totalAmount').textContent = '¥' + totalPrice.toFixed(2);
-            
-            // 同步全选框状态
-            const allCheckboxes = document.querySelectorAll('.product-checkbox');
-            const selectAllTop = document.getElementById('selectAll');
-            const selectAllBottom = document.getElementById('selectAllBottom');
-            
-            if (selectedCount === allCheckboxes.length && selectedCount > 0) {
-                selectAllTop.checked = true;
-                selectAllBottom.checked = true;
-            } else {
-                selectAllTop.checked = false;
-                selectAllBottom.checked = false;
-            }
-        }
-        
-        // 移除单个商品（防连击优化）
-        async function removeItem(productId) {
-            if (!confirm('确定要移除该商品吗？')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/cart/remove', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `product_id=${productId}`
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // 从DOM中移除该行
-                    const row = document.querySelector(`tr[data-product-id="${productId}"]`);
-                    if (row) {
-                        row.style.transition = 'all 0.3s ease-out';
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(-100%)';
-                        
-                        setTimeout(() => {
-                            row.remove();
-                            // 如果购物车为空，刷新页面显示空状态
-                            if (document.querySelectorAll('tbody tr').length === 0) {
-                                window.location.reload();
-                            } else {
-                                updateSummary();
-                            }
-                        }, 300);
-                    }
-                    
-                    showNotification('已移除', 'success');
-                } else {
-                    showNotification(data.message || '移除失败', 'error');
-                }
-            } catch (err) {
-                console.error('Error:', err);
-                showNotification('网络错误，请稍后再试', 'error');
-            }
-        }
-        
-        // 清空购物车
-        async function clearCart() {
-            if (!confirm('确定要清空购物车吗？')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/cart/clear', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    showNotification(data.message || '清空失败', 'error');
-                }
-            } catch (err) {
-                console.error('Error:', err);
-                showNotification('网络错误，请稍后再试', 'error');
-            }
-        }
-        
-        // 合并结算（防连击 + 扫码支付流程）
-        async function checkout() {
-            const checkoutBtn = document.querySelector('.btn-success[onclick="checkout()"]');
-            const checkboxes = document.querySelectorAll('.product-checkbox:checked');
-            
-            // 验证选择
-            if (checkboxes.length === 0) {
-                showNotification('请至少选择一件商品', 'error');
-                return;
-            }
-            
-            // 防连击：禁用按钮
-            if (checkoutBtn) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>正在创建订单...';
-            }
-            
-            try {
-                const productIds = Array.from(checkboxes).map(cb => cb.value);
-                
-                // 发起合并支付请求
-                const formData = new URLSearchParams();
-                productIds.forEach(id => {
-                    formData.append('product_ids[]', id);
-                });
-                
-                const response = await fetch('/api/checkout/cart', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData.toString()
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // 保存批次号
-                    currentBatchTradeNo = data.batch_trade_no;
-                    
-                    // 显示支付宝扫码模态框
-                    showAlipayModal(data.total_amount, data.qr_url || data.pay_url);
-                    
-                    // 启动支付状态轮询
-                    startPaymentPolling(currentBatchTradeNo);
-                } else {
-                    showNotification(data.message || '结算失败', 'error');
-                    // 恢复按钮状态
-                    if (checkoutBtn) {
-                        checkoutBtn.disabled = false;
-                        checkoutBtn.innerHTML = '合并结算';
-                    }
-                }
-            } catch (err) {
-                console.error('Error:', err);
-                showNotification('网络错误，请稍后再试', 'error');
-                // 恢复按钮状态
-                if (checkoutBtn) {
-                    checkoutBtn.disabled = false;
-                    checkoutBtn.innerHTML = '合并结算';
-                }
-            }
-        }
-        
-        // 显示支付宝扫码模态框
-        function showAlipayModal(amount, qrUrl) {
-            const modal = document.getElementById('alipayModal');
-            const qrcodeImg = document.getElementById('alipayQrcode');
-            const qrcodeLoading = document.getElementById('qrcodeLoading');
-            const payAmount = document.getElementById('payAmount');
-            const payStatusText = document.getElementById('payStatusText');
-            
-            // 设置金额
-            payAmount.textContent = parseFloat(amount).toFixed(2);
-            
-            // 重置状态
-            payStatusText.innerHTML = `
-                <div class="status-waiting">
-                    <i class="bi bi-hourglass-split"></i>
-                    <span>等待扫码支付...</span>
-                </div>
-            `;
-            
-            // 显示加载状态
-            qrcodeLoading.classList.remove('hidden');
-            qrcodeImg.style.opacity = '0';
-            
-            // 显示模态框
-            modal.style.display = 'flex';
-            
-            // 加载二维码
-            if (qrUrl) {
-                qrcodeImg.onload = function() {
-                    qrcodeLoading.classList.add('hidden');
-                    qrcodeImg.style.opacity = '1';
-                };
-                qrcodeImg.onerror = function() {
-                    qrcodeLoading.innerHTML = '<p class="text-danger">二维码加载失败</p>';
-                };
-                qrcodeImg.src = qrUrl;
-            }
-        }
-        
-        // 关闭支付宝模态框
-        function closeAlipayModal() {
-            const modal = document.getElementById('alipayModal');
-            
-            // 停止轮询
-            stopPaymentPolling();
-            
-            // 隐藏模态框
-            modal.style.display = 'none';
-            
-            // 重置当前批次号
-            currentBatchTradeNo = null;
-            
-            // 恢复结算按钮状态
-            const checkoutBtn = document.querySelector('.btn-success[onclick="checkout()"]');
-            if (checkoutBtn) {
-                checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = '合并结算';
-            }
-        }
-        
-        // 启动支付状态轮询
-        function startPaymentPolling(batchTradeNo) {
-            // 先清除之前的定时器
-            stopPaymentPolling();
-            
-            // 每3秒查询一次支付状态
-            cartPayTimer = setInterval(async () => {
-                try {
-                    const response = await fetch(`/api/order/status?batch_trade_no=${encodeURIComponent(batchTradeNo)}`);
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        const payStatusText = document.getElementById('payStatusText');
-                        
-                        if (data.status === 'paid') {
-                            // 支付成功
-                            stopPaymentPolling();
-                            
-                            payStatusText.innerHTML = `
-                                <div class="status-success">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    <span>支付成功！正在跳转...</span>
-                                </div>
-                            `;
-                            
-                            // 1.5秒后跳转到下载页面
-                            setTimeout(() => {
-                                window.location.href = '/user/downloads';
-                            }, 1500);
-                        } else if (data.status === 'partial_paid') {
-                            // 部分支付
-                            payStatusText.innerHTML = `
-                                <div class="status-waiting">
-                                    <i class="bi bi-clock-history"></i>
-                                    <span>部分订单已支付，请稍候...</span>
-                                </div>
-                            `;
-                        }
-                    }
-                } catch (err) {
-                    console.error('支付状态查询失败:', err);
-                }
-            }, 3000);
-        }
-        
-        // 停止支付状态轮询
-        function stopPaymentPolling() {
-            if (cartPayTimer) {
-                clearInterval(cartPayTimer);
-                cartPayTimer = null;
-            }
-        }
-        
-        // 页面卸载时清除轮询
-        window.addEventListener('beforeunload', function() {
-            stopPaymentPolling();
-        });
-    </script>
+<script src="/assets/js/main.js"></script>
+<script>
+let cartPayTimer = null;
+let currentBatchTradeNo = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initCartFunctions();
+});
+
+function initCartFunctions() {
+    const selectAllTop = document.getElementById('selectAll');
+    const selectAllBottom = document.getElementById('selectAllBottom');
     
-    <style>
-        .user-center { padding-top: 100px; min-height: calc(100vh - 80px); }
-        .user-layout { display: grid; grid-template-columns: 250px 1fr; gap: var(--spacing-2xl); }
-        .user-sidebar { position: sticky; top: 100px; height: fit-content; }
-        .user-info { text-align: center; padding: var(--spacing-xl); background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); margin-bottom: var(--spacing-lg); }
-        .user-avatar { width: 100px; height: 100px; border-radius: 50%; margin-bottom: var(--spacing-md); }
-        .user-nav { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: var(--spacing-md); }
-        .user-nav a { display: block; padding: var(--spacing-md); color: var(--gray-700); border-radius: var(--radius-md); transition: all var(--transition-fast); }
-        .user-nav a:hover, .user-nav a.active { background: var(--accent-light); color: var(--accent-dark); }
-        .user-content { background: var(--white); padding: var(--spacing-2xl); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
-        
-        /* 购物车专用样式 */
-        .cart-page .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl); }
-        .cart-page .cart-header h1 { margin: 0; }
-        
-        .empty-cart { text-align: center; padding: var(--spacing-3xl); color: var(--gray-500); }
-        .empty-cart svg { opacity: 0.3; margin-bottom: var(--spacing-lg); }
-        .empty-cart .empty-message { font-size: 1.1rem; margin-bottom: var(--spacing-lg); }
-        
-        .cart-table-wrapper { overflow-x: auto; margin-bottom: var(--spacing-xl); }
-        .cart-table { width: 100%; border-collapse: collapse; }
-        .cart-table thead { background: var(--gray-50); }
-        .cart-table th { padding: var(--spacing-md); text-align: left; font-weight: 600; color: var(--gray-700); }
-        .cart-table td { padding: var(--spacing-lg) var(--spacing-md); border-bottom: 1px solid var(--gray-100); }
-        .cart-table tbody tr:hover { background: var(--gray-50); }
-        
-        .cart-item { display: flex; gap: var(--spacing-md); align-items: center; }
-        .cart-item img { width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius-sm); }
-        .cart-item-info h4 { margin: 0 0 var(--spacing-xs) 0; }
-        .cart-item-time { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
-        
-        .type-badge { display: inline-block; padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; }
-        .type-novel { background: #e3f2fd; color: #1976d2; }
-        .type-music { background: #f3e5f5; color: #7b1fa2; }
-        
-        .price { font-weight: 700; color: var(--accent-color); font-size: 1.1rem; }
-        
-        .cart-summary { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); background: var(--gray-50); border-radius: var(--radius-md); }
-        .summary-left { display: flex; align-items: center; gap: var(--spacing-lg); }
-        .select-all-label { display: flex; align-items: center; gap: var(--spacing-xs); cursor: pointer; }
-        .selected-text { color: var(--gray-600); }
-        .total-text { font-size: 1.2rem; }
-        .total-text strong { color: var(--accent-color); }
-        
-        /* 模态框样式 */
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-content { background: var(--white); border-radius: var(--radius-lg); max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: modalSlideIn 0.3s ease-out; }
-        .modal-content.modal-sm { max-width: 360px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); border-bottom: 1px solid var(--gray-200); }
-        .modal-header h3 { margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
-        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-600); transition: transform 0.2s; }
-        .modal-close:hover { transform: rotate(90deg); }
-        .modal-body { padding: var(--spacing-xl); text-align: center; }
-        
-        /* 支付金额显示 */
-        .pay-amount-display { margin-bottom: var(--spacing-lg); }
-        .amount-label { display: block; font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem; }
-        .amount-value { font-size: 2rem; font-weight: 700; color: var(--accent-color); }
-        
-        /* 二维码容器 */
-        .qrcode-container { position: relative; width: 220px; height: 220px; margin: 0 auto var(--spacing-lg); padding: var(--spacing-md); background: var(--white); border: 2px solid var(--gray-200); border-radius: var(--radius-md); }
-        .qrcode-container img { width: 100%; height: 100%; object-fit: contain; }
-        .qrcode-loading { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--spacing-md); }
-        .qrcode-loading.hidden { display: none; }
-        
-        /* 支付状态 */
-        .pay-status { margin-bottom: var(--spacing-md); min-height: 40px; }
-        .status-waiting { color: var(--gray-600); display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-        .status-success { color: #28a745; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; animation: successPulse 0.5s ease-out; }
-        .status-error { color: #dc3545; }
-        
-        /* 支付提示 */
-        .pay-tips { padding: var(--spacing-md); background: var(--gray-50); border-radius: var(--radius-sm); }
-        .pay-tips small { display: flex; align-items: center; gap: 0.3rem; }
-        
-        /* 动画 */
-        @keyframes modalSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+    if (selectAllTop) selectAllTop.addEventListener('change', toggleSelectAll);
+    if (selectAllBottom) selectAllBottom.addEventListener('change', toggleSelectAll);
+    
+    document.querySelectorAll('.product-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSummary);
+    });
+    
+    const alipayModal = document.getElementById('alipayModal');
+    if (alipayModal) {
+        alipayModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAlipayModal();
+            }
+        });
+    }
+}
+
+function toggleSelectAll() {
+    const selectAllTop = document.getElementById('selectAll');
+    const selectAllBottom = document.getElementById('selectAllBottom');
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    
+    const isChecked = selectAllTop.checked || selectAllBottom.checked;
+    
+    selectAllTop.checked = isChecked;
+    selectAllBottom.checked = isChecked;
+    
+    checkboxes.forEach(cb => cb.checked = isChecked);
+    
+    updateSummary();
+}
+
+function updateSummary() {
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    const items = document.querySelectorAll('.cart-item-card');
+    
+    let selectedCount = 0;
+    let totalPrice = 0;
+    
+    checkboxes.forEach(cb => {
+        const productId = cb.value;
+        const item = document.querySelector(`.cart-item-card[data-product-id="${productId}"]`);
+        if (item) {
+            const priceElement = item.querySelector('.price-value');
+            const priceText = priceElement.textContent.replace('¥', '').replace(',', '');
+            totalPrice += parseFloat(priceText);
+            selectedCount++;
         }
-        @keyframes successPulse {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
+    });
+    
+    document.getElementById('selectedCount').textContent = selectedCount;
+    document.getElementById('totalAmount').textContent = '¥' + totalPrice.toFixed(2);
+    
+    const allCheckboxes = document.querySelectorAll('.product-checkbox');
+    const selectAllTop = document.getElementById('selectAll');
+    const selectAllBottom = document.getElementById('selectAllBottom');
+    
+    if (selectedCount === allCheckboxes.length && selectedCount > 0) {
+        selectAllTop.checked = true;
+        selectAllBottom.checked = true;
+    } else {
+        selectAllTop.checked = false;
+        selectAllBottom.checked = false;
+    }
+}
+
+async function removeItem(productId) {
+    if (!confirm('确定要移除该商品吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/cart/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            const item = document.querySelector(`.cart-item-card[data-product-id="${productId}"]`);
+            if (item) {
+                item.style.transition = 'all 0.3s ease-out';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(-100%)';
+                
+                setTimeout(() => {
+                    item.remove();
+                    if (document.querySelectorAll('.cart-item-card').length === 0) {
+                        window.location.reload();
+                    } else {
+                        updateSummary();
+                    }
+                }, 300);
+            }
+            
+            showNotification('已移除', 'success');
+            updateCartCount(data.cart_count);
+        } else {
+            showNotification(data.message || '移除失败', 'error');
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    }
+}
+
+async function clearCart() {
+    if (!confirm('确定要清空购物车吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/cart/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        const data = await response.json();
         
-        .spinner-border { width: 2rem; height: 2rem; border-width: 0.25em; border-style: solid; border-radius: 50%; border-right-color: transparent; animation: spin 0.75s linear infinite; }
-        
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.9rem; }
-        .btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
-        .btn-xl { padding: 1.2rem 2.5rem; font-size: 1.2rem; font-weight: 600; }
-        
-        @media (max-width: 768px) { 
-            .user-layout { grid-template-columns: 1fr; } 
-            .cart-summary { flex-direction: column; gap: var(--spacing-lg); }
-            .summary-left { flex-wrap: wrap; }
+        if (data.success) {
+            window.location.reload();
+        } else {
+            showNotification(data.message || '清空失败', 'error');
         }
-    </style>
-</body>
-</html>
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    }
+}
+
+async function checkout() {
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        showNotification('请至少选择一件商品', 'error');
+        return;
+    }
+    
+    try {
+        const productIds = Array.from(checkboxes).map(cb => cb.value);
+        const formData = new URLSearchParams();
+        productIds.forEach(id => {
+            formData.append('product_ids[]', id);
+        });
+        
+        const response = await fetch('/api/checkout/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentBatchTradeNo = data.batch_trade_no;
+            showAlipayModal(data.total_amount, data.qr_url || data.pay_url);
+            startPaymentPolling(currentBatchTradeNo);
+        } else {
+            showNotification(data.message || '结算失败', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    }
+}
+
+function showAlipayModal(amount, qrUrl) {
+    const modal = document.getElementById('alipayModal');
+    const qrcodeImg = document.getElementById('alipayQrcode');
+    const qrcodeLoading = document.getElementById('qrcodeLoading');
+    const payAmount = document.getElementById('payAmount');
+    const payStatusText = document.getElementById('payStatusText');
+    
+    payAmount.textContent = parseFloat(amount).toFixed(2);
+    payStatusText.innerHTML = '<div class="status-waiting"><i class="bi bi-hourglass-split"></i><span>等待扫码支付...</span></div>';
+    
+    qrcodeLoading.classList.remove('hidden');
+    qrcodeImg.style.opacity = '0';
+    
+    modal.classList.add('visible');
+    
+    if (qrUrl) {
+        qrcodeImg.onload = function() {
+            qrcodeLoading.classList.add('hidden');
+            qrcodeImg.style.opacity = '1';
+        };
+        qrcodeImg.onerror = function() {
+            qrcodeLoading.innerHTML = '<p class="text-danger">二维码加载失败</p>';
+        };
+        qrcodeImg.src = qrUrl;
+    }
+}
+
+function closeAlipayModal() {
+    const modal = document.getElementById('alipayModal');
+    modal.classList.remove('visible');
+    stopPaymentPolling();
+    currentBatchTradeNo = null;
+}
+
+function startPaymentPolling(batchTradeNo) {
+    stopPaymentPolling();
+    
+    cartPayTimer = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/order/status?batch_trade_no=${encodeURIComponent(batchTradeNo)}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const payStatusText = document.getElementById('payStatusText');
+                
+                if (data.status === 'paid') {
+                    stopPaymentPolling();
+                    payStatusText.innerHTML = '<div class="status-success"><i class="bi bi-check-circle-fill"></i><span>支付成功！正在跳转...</span></div>';
+                    setTimeout(() => {
+                        window.location.href = '/user/downloads';
+                    }, 1500);
+                } else if (data.status === 'partial_paid') {
+                    payStatusText.innerHTML = '<div class="status-waiting"><i class="bi bi-clock-history"></i><span>部分订单已支付，请稍候...</span></div>';
+                }
+            }
+        } catch (err) {
+            console.error('支付状态查询失败:', err);
+        }
+    }, 3000);
+}
+
+function stopPaymentPolling() {
+    if (cartPayTimer) {
+        clearInterval(cartPayTimer);
+        cartPayTimer = null;
+    }
+}
+
+window.addEventListener('beforeunload', function() {
+    stopPaymentPolling();
+});
+</script>
+
+<style>
+.cart-page-section {
+    padding: 100px 0 60px;
+    min-height: 80vh;
+    background: linear-gradient(180deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+}
+
+.breadcrumb {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.breadcrumb-item {
+    color: var(--color-gray-600);
+}
+
+.breadcrumb-item.active {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.cart-page-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: var(--color-gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.empty-cart-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.empty-cart-icon {
+    margin-bottom: 1.5rem;
+}
+
+.empty-cart-icon i {
+    font-size: 5rem;
+    color: var(--color-gray-300);
+}
+
+.empty-cart-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--color-gray-700);
+}
+
+.empty-cart-text {
+    color: var(--color-gray-500);
+    margin-bottom: 1.5rem;
+}
+
+.cart-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.cart-items-container {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.cart-header-bar {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px 120px 100px;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-gray-50);
+    font-weight: 600;
+    color: var(--color-gray-700);
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.select-all-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.cart-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.cart-items-list {
+    padding: 0.5rem 0;
+}
+
+.cart-item-card {
+    display: grid;
+    grid-template-columns: 60px 1fr 100px 120px 100px;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-100);
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.cart-item-card:hover {
+    background: var(--color-gray-50);
+}
+
+.cart-item-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.cart-item-image {
+    width: 70px;
+    height: 70px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    border: 1px solid var(--color-gray-200);
+}
+
+.cart-item-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.cart-item-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--color-gray-900);
+}
+
+.cart-item-meta, .cart-item-time {
+    font-size: 0.875rem;
+    color: var(--color-gray-500);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.type-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.type-novel {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--color-primary);
+}
+
+.type-music {
+    background: rgba(118, 75, 162, 0.1);
+    color: #764ba2;
+}
+
+.price-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.cart-footer-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: var(--color-gray-50);
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.cart-footer-left, .cart-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cart-summary-info {
+    font-size: 1rem;
+    color: var(--color-gray-700);
+}
+
+.summary-count {
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.summary-divider {
+    color: var(--color-gray-400);
+}
+
+.summary-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-dialog {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow-xl);
+    transform: translateY(20px);
+    transition: transform 0.3s;
+}
+
+.modal-overlay.visible .modal-dialog {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-gray-900);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--color-gray-700);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.pay-amount-display {
+    margin-bottom: 1.5rem;
+}
+
+.pay-amount-label {
+    display: block;
+    color: var(--color-gray-600);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.pay-amount-value {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.qrcode-wrapper {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto 1.5rem;
+    padding: 1rem;
+    background: var(--color-white);
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+}
+
+.qrcode-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.qrcode-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    transition: opacity 0.3s;
+}
+
+.qrcode-loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner-border {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid var(--color-gray-200);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.pay-status-indicator {
+    margin-bottom: 1rem;
+}
+
+.status-waiting, .status-success {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--color-gray-600);
+    font-weight: 500;
+}
+
+.status-success {
+    color: var(--color-success);
+}
+
+.pay-tips {
+    padding: 0.75rem;
+    background: var(--color-gray-50);
+    border-radius: var(--radius-md);
+}
+
+.pay-tips i {
+    color: var(--color-primary);
+    margin-right: 0.25rem;
+}
+
+@media (max-width: 968px) {
+    .cart-header-bar, .cart-item-card {
+        grid-template-columns: 40px 1fr;
+        grid-template-areas: 
+            "select info"
+            ". info"
+            ". type"
+            ". price"
+            ". action";
+        gap: 0.5rem;
+    }
+    
+    .cart-header-info { grid-area: info; }
+    .cart-header-type { display: none; }
+    .cart-header-price { display: none; }
+    .cart-header-action { display: none; }
+    
+    .cart-item-select { grid-area: select; }
+    .cart-item-info { grid-area: info; }
+    .cart-item-type { grid-area: type; }
+    .cart-item-price { grid-area: price; }
+    .cart-item-action { grid-area: action; }
+    
+    .cart-item-card {
+        padding: 1rem;
+    }
+    
+    .cart-footer-bar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .cart-footer-right {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .cart-footer-right button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .cart-page-title {
+        font-size: 1.5rem;
+    }
+    
+    .cart-item-info {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+
+<?php require __DIR__ . '/../_footer.phtml'; ?>

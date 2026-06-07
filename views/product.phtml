@@ -1,713 +1,741 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($product['title']) ?> - BookMusic Mall</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-content">
-                <a href="/" class="navbar-brand">
-                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 2C10.06 2 2 10.06 2 20s8.06 18 18 18 18-8.06 18-18S29.94 2 20 2zm0 4c7.73 0 14 6.27 14 14s-6.27 14-14 14S6 25.73 6 20 12.27 6 20 6zm-4 6v16l12-8-12-8z"/>
-                    </svg>
-                    <span>BookMusic Mall</span>
-                </a>
-                
-                <ul class="navbar-nav">
-                    <li><a href="/">首页</a></li>
-                    <li><a href="/novels">小说</a></li>
-                    <li><a href="/music">音乐</a></li>
-                    <?php if (isLoggedIn()): ?>
-                        <li><a href="/cart" class="cart-link">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
-                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                            购物车
-                        </a></li>
-                    <?php endif; ?>
-                </ul>
-                
-                <div class="navbar-actions">
-                    <?php if (isLoggedIn()): ?>
-                        <a href="/user/" class="btn btn-secondary">用户中心</a>
-                        <a href="/logout" class="btn btn-outline">退出</a>
-                    <?php else: ?>
-                        <a href="/login" class="btn btn-secondary">登录</a>
-                        <a href="/register" class="btn btn-primary">注册</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </nav>
+<?php require __DIR__ . '/_header.phtml'; ?>
 
-    <section class="product-detail">
-        <div class="container">
-            <?php if ($message): ?>
-                <div class="alert alert-success">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <?= e($message) ?>
-                </div>
-            <?php endif; ?>
-            
-            <div class="product-detail-grid">
-                <div class="product-image-section">
+<section class="product-detail-section">
+    <div class="container">
+        <nav class="breadcrumb" aria-label="breadcrumb">
+            <a href="/" class="breadcrumb-item">首页</a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="/<?= $product['type'] === 'music' ? 'music' : 'novels' ?>" class="breadcrumb-item">
+                <?= $product['type'] === 'music' ? '音乐' : '小说' ?>
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active" aria-current="page"><?= e($product['title']) ?></span>
+        </nav>
+
+        <?php if ($message): ?>
+            <div class="alert alert-success alert-dismissible fade-in">
+                <i class="bi bi-check-circle-fill"></i>
+                <span><?= e($message) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <div class="product-detail-grid">
+            <div class="product-image-gallery">
+                <div class="product-cover-wrapper">
                     <img src="/uploads/cover/<?= e($product['cover']) ?>" 
                          alt="<?= e($product['title']) ?>" 
-                         class="product-cover">
-                    
-                    <?php if ($product['type'] === 'music' && $product['preview_path']): ?>
-                        <div class="music-player">
-                            <h4>试听</h4>
-                            <audio controls>
+                         class="product-cover-main">
+                    <div class="product-type-badge badge-<?= $product['type'] ?>">
+                        <i class="bi bi-<?= $product['type'] === 'music' ? 'music-note-beamed' : 'book' ?>"></i>
+                        <?= $product['type'] === 'music' ? '音乐' : '小说' ?>
+                    </div>
+                </div>
+
+                <?php if ($product['type'] === 'music' && $product['preview_path']): ?>
+                    <div class="music-preview-section">
+                        <h4 class="preview-title"><i class="bi bi-play-circle"></i> 试听片段</h4>
+                        <div class="audio-player-container">
+                            <audio controls class="custom-audio">
                                 <source src="/uploads/preview/<?= e($product['preview_path']) ?>" type="audio/mpeg">
                                 您的浏览器不支持音频播放。
                             </audio>
                         </div>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="product-info-section">
-                    <span class="product-category-badge">
-                        <?= e($product['category_name'] ?? ($product['type'] === 'novel' ? '小说' : '音乐')) ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="product-info-panel">
+                <div class="product-header">
+                    <span class="product-category">
+                        <i class="bi bi-tag"></i>
+                        <?= e($product['category_name'] ?? '精选') ?>
                     </span>
-                    
                     <h1 class="product-title"><?= e($product['title']) ?></h1>
-                    
-                    <p class="product-author">
-                        <?= $product['type'] === 'novel' ? '作者' : '歌手' ?>：
+                    <p class="product-creator">
+                        <i class="bi bi-person-circle"></i>
+                        <?= $product['type'] === 'novel' ? '作者' : '艺术家' ?>：
                         <strong><?= e($product['author']) ?></strong>
                     </p>
-                    
-                    <div class="product-stats">
-            <div class="stat-item">
-                <span class="stat-label">价格</span>
-                <span class="stat-value price"><?= formatPrice($product['price']) ?></span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">销量</span>
-                <span class="stat-value"><?= $product['sales'] ?></span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">下载量</span>
-                <span class="stat-value"><?= $product['downloads'] ?></span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">评分</span>
-                <span class="stat-value">
-                    <div class="star-rating" data-rating="<?= $product['rating_avg'] ?? 0 ?>">
-                        <?php for($i = 1; $i <= 5; $i++): ?>
-                            <span class="star <?= ($i <= ($product['rating_avg'] ?? 0)) ? 'filled' : '' ?>">★</span>
-                        <?php endfor; ?>
+                </div>
+
+                <div class="product-metrics">
+                    <div class="metric-item">
+                        <span class="metric-label">价格</span>
+                        <span class="metric-value price"><?= formatPrice($product['price']) ?></span>
                     </div>
-                    <span class="rating-text"><?= number_format($product['rating_avg'] ?? 0, 1) ?></span>
-                </span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">评价</span>
-                <span class="stat-value"><?= $product['review_count'] ?? 0 ?></span>
-            </div>
-        </div>
-                    
-                    <div class="product-description">
-                        <h3>简介</h3>
+                    <div class="metric-item">
+                        <span class="metric-label">销量</span>
+                        <span class="metric-value"><?= number_format($product['sales']) ?></span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">下载</span>
+                        <span class="metric-value"><?= number_format($product['downloads']) ?></span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">评分</span>
+                        <span class="metric-value">
+                            <div class="stars-display">
+                                <?php for($i = 1; $i <= 5; $i++): ?>
+                                    <i class="bi <?= ($i <= (int)$product['rating_avg']) ? 'bi-star-fill' : 'bi-star' ?>"></i>
+                                <?php endfor; ?>
+                            </div>
+                            <span class="rating-number"><?= number_format($product['rating_avg'] ?? 0, 1) ?></span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="product-description-section">
+                    <h3 class="section-heading"><i class="bi bi-info-circle"></i> 商品介绍</h3>
+                    <div class="description-content">
                         <p><?= nl2br(e($product['description'])) ?></p>
                     </div>
-                    
-                    <div class="product-actions">
-                        <?php if ($hasPurchased): ?>
-                            <a href="/user/downloads" class="btn btn-primary btn-lg">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                                </svg>
-                                去下载
-                            </a>
-                        <?php else: ?>
-                            <button type="button" class="btn btn-secondary btn-lg" onclick="addToCart(<?= $productId ?>)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M11 9h2V6h-2v3zm-2 7c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm9-13h-6v2h6v13H6V8H4v9c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
-                                </svg>
-                                加入购物车
+                </div>
+
+                <div class="product-actions">
+                    <?php if ($hasPurchased): ?>
+                        <a href="/user/downloads" class="btn btn-primary btn-large btn-block">
+                            <i class="bi bi-cloud-download"></i> 前往下载已购商品
+                        </a>
+                        <div class="purchase-status-badge">
+                            <i class="bi bi-check-circle"></i> 已购买
+                        </div>
+                    <?php else: ?>
+                        <button type="button" class="btn btn-secondary btn-large" onclick="addToCart(<?= $productId ?>)">
+                            <i class="bi bi-cart-plus"></i> 加入购物车
+                        </button>
+                        <form method="POST" action="">
+                            <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                            <button type="submit" name="buy" class="btn btn-primary btn-large btn-gradient">
+                                <i class="bi bi-bag-check"></i> 立即购买
                             </button>
-                            <form method="POST" action="">
-                                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                <button type="submit" name="buy" class="btn btn-primary btn-lg">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-                                    </svg>
-                                    立即购买
-                                </button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- 评价区域 -->
-    <div class="product-reviews-section" style="grid-column: 1 / -1; margin-top: 2rem;">
-        <h3>用户评价 (<?= count($reviews) ?>)</h3>
-        
-        <?php if ($hasPurchased && !$hasReviewed): ?>
-            <div class="review-form-container" style="background: var(--white); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                <h4>发表评价</h4>
-                <form id="reviewForm" onsubmit="submitReview(event, <?= $productId ?>)">
-                    <div style="margin-bottom: 10px;">
-                        <label>评分：</label>
-                        <select name="rating" id="reviewRating" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
-                            <option value="4">⭐⭐⭐⭐ (4星)</option>
-                            <option value="3">⭐⭐⭐ (3星)</option>
-                            <option value="2">⭐⭐ (2星)</option>
-                            <option value="1">⭐ (1星)</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom: 10px;">
-                        <textarea name="content" id="reviewContent" rows="3" placeholder="说说您的使用体验吧..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">提交评价</button>
-                </form>
+        <!-- 评价区域 -->
+        <div class="reviews-section">
+            <div class="reviews-header">
+                <h2 class="section-title"><i class="bi bi-chat-dots"></i> 用户评价</h2>
+                <span class="reviews-count">(<?= count($reviews) ?> 条)</span>
             </div>
-        <?php elseif ($hasPurchased && $hasReviewed): ?>
-            <div class="alert alert-success">您已评价过此商品，感谢您的反馈！</div>
-        <?php endif; ?>
 
-        <div class="reviews-list">
-            <?php if (empty($reviews)): ?>
-                <p style="text-align: center; padding: 30px; color: #999;">暂无评价，快来抢沙发吧！</p>
-            <?php else: ?>
-                <?php foreach ($reviews as $review): ?>
-                    <div class="review-item" style="background: var(--white); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div class="review-header" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <strong style="color: #333;"><?= e($review['username']) ?></strong>
-                            <span style="color: #f5a623; font-size: 1.2rem;">
-                                <?= str_repeat('⭐', $review['rating']) ?>
-                            </span>
+            <?php if ($hasPurchased && !$hasReviewed): ?>
+                <div class="review-form-card fade-in">
+                    <h3 class="form-title"><i class="bi bi-pencil-square"></i> 分享您的体验</h3>
+                    <form id="reviewForm" onsubmit="submitReview(event, <?= $productId ?>)">
+                        <div class="form-group">
+                            <label class="form-label">评分</label>
+                            <div class="rating-selector" id="starRating">
+                                <i class="bi bi-star rating-star" data-rating="1"></i>
+                                <i class="bi bi-star rating-star" data-rating="2"></i>
+                                <i class="bi bi-star rating-star" data-rating="3"></i>
+                                <i class="bi bi-star rating-star" data-rating="4"></i>
+                                <i class="bi bi-star rating-star" data-rating="5"></i>
+                                <input type="hidden" name="rating" id="selectedRating" value="5">
+                            </div>
                         </div>
-                        <div class="review-body" style="margin-bottom: 10px;">
-                            <p style="color: #666; line-height: 1.6; margin: 0;"><?= nl2br(e($review['content'])) ?></p>
+                        <div class="form-group">
+                            <label class="form-label">评价内容</label>
+                            <textarea name="content" id="reviewContent" rows="4" class="form-control" 
+                                      placeholder="说说您的使用体验..." required></textarea>
                         </div>
-                        <div class="review-footer" style="font-size: 0.85rem; color: #999;">
-                            <span style="display: inline-block; padding: 2px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 3px; margin-right: 10px;">已购买</span>
-                            <?= date('Y-m-d H:i', strtotime($review['create_time'])) ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> 提交评价
+                        </button>
+                    </form>
+                </div>
+            <?php elseif ($hasPurchased && $hasReviewed): ?>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 您已评价过此商品，感谢您的反馈！
+                </div>
             <?php endif; ?>
+
+            <div class="reviews-list">
+                <?php if (empty($reviews)): ?>
+                    <div class="empty-state">
+                        <i class="bi bi-emoji-smile"></i>
+                        <p>暂无评价，快来抢沙发吧！</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($reviews as $review): ?>
+                        <div class="review-item fade-in">
+                            <div class="reviewer-info">
+                                <div class="reviewer-avatar">
+                                    <?= strtoupper(substr($review['username'], 0, 1)) ?>
+                                </div>
+                                <div class="reviewer-details">
+                                    <h4 class="reviewer-name"><?= e($review['username']) ?></h4>
+                                    <div class="review-meta">
+                                        <div class="stars-mini">
+                                            <?php for($i = 1; $i <= 5; $i++): ?>
+                                                <i class="bi <?= ($i <= $review['rating']) ? 'bi-star-fill' : 'bi-star' ?>"></i>
+                                            <?php endfor; ?>
+                                        </div>
+                                        <span class="review-date">
+                                            <i class="bi bi-clock"></i> 
+                                            <?= date('Y-m-d H:i', strtotime($review['create_time'])) ?>
+                                        </span>
+                                        <span class="verified-purchase">
+                                            <i class="bi bi-check-circle-fill"></i> 已购买
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="review-content">
+                                <p><?= nl2br(e($review['content'])) ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
+</section>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <?= date('Y') ?> BookMusic Mall. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="/assets/js/main.js"></script>
-    <script>
-        // 加入购物车
-        function addToCart(productId) {
-            fetch('/api/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `product_id=${productId}`
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('已加入购物车');
-                } else {
-                    alert(data.message || '加入失败');
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                alert('网络错误，请稍后再试');
-            });
-        }
-
-        // 提交评价 (AJAX)
-        function submitReview(event, productId) {
-            event.preventDefault();
-            const rating = document.getElementById('reviewRating').value;
-            const content = document.getElementById('reviewContent').value;
-
-            fetch(`/product/review/${productId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `rating=${rating}&content=${encodeURIComponent(content)}`
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('评价提交成功！');
-                    window.location.reload(); // 刷新页面以显示新评价
-                } else {
-                    alert(data.message || '提交失败');
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                alert('网络错误，请稍后再试');
-            });
-        }
-    </script>
+<script src="/assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 评分星星选择器
+    const starRating = document.getElementById('starRating');
+    const selectedRating = document.getElementById('selectedRating');
     
-    <style>
-        .product-detail {
-            padding-top: 120px;
-            min-height: calc(100vh - 80px);
-        }
-        
-        .alert {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .alert-success {
-            background: #efe;
-            color: #2e7d32;
-            border: 1px solid #cfc;
-        }
-        
-        .alert-info {
-            background: #e3f2fd;
-            color: #1565c0;
-            border: 1px solid #bbdefb;
-        }
-        
-        .product-detail-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-3xl);
-            margin-bottom: var(--spacing-3xl);
-        }
-        
-        .product-image-section {
-            position: sticky;
-            top: 100px;
-        }
-        
-        .product-cover {
-            width: 100%;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl);
-        }
-        
-        .music-player {
-            margin-top: var(--spacing-xl);
-            padding: var(--spacing-lg);
-            background: var(--white);
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .music-player h4 {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .music-player audio {
-            width: 100%;
-        }
-        
-        .product-info-section {
-            padding: var(--spacing-xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .product-category-badge {
-            display: inline-block;
-            padding: var(--spacing-xs) var(--spacing-md);
-            background: var(--accent-light);
-            color: var(--accent-dark);
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: var(--radius-sm);
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .product-title {
-            font-size: 2.5rem;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .product-author {
-            font-size: 1.1rem;
-            color: var(--gray-600);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .product-stats {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: var(--spacing-lg);
-            padding: var(--spacing-lg);
-            background: var(--gray-50);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--gray-600);
-            margin-bottom: var(--spacing-xs);
-        }
-        
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        
-        .stat-value.price {
-            color: var(--accent-color);
-        }
-        
-        .star-rating {
-            display: inline-flex;
-            gap: 2px;
-            margin-bottom: 4px;
-        }
-        
-        .star-rating .star,
-        .stars .star,
-        .review-stars .star {
-            color: #ddd;
-            font-size: 1rem;
-        }
-        
-        .star-rating .star.filled,
-        .stars .star.filled,
-        .review-stars .star.filled {
-            color: #ffc107;
-        }
-        
-        .rating-text {
-            font-size: 1rem;
-            color: var(--gray-700);
-            margin-left: 4px;
-        }
-        
-        .product-description {
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .product-description h3 {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .product-description p {
-            line-height: 1.8;
-            color: var(--gray-700);
-        }
-        
-        .product-actions {
-            display: flex;
-            gap: var(--spacing-md);
-        }
-        
-        .btn-lg {
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-        }
-        
-        /* Reviews Section Styles */
-        .reviews-section {
-            padding: var(--spacing-3xl) 0;
-            background: var(--gray-50);
-        }
-        
-        .section-title {
-            font-size: 1.8rem;
-            margin-bottom: var(--spacing-xl);
-            color: var(--gray-900);
-        }
-        
-        .reviews-summary {
-            background: var(--white);
-            padding: var(--spacing-xl);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .rating-overview {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: var(--spacing-xl);
-            align-items: center;
-        }
-        
-        .big-rating {
-            text-align: center;
-        }
-        
-        .rating-number {
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            display: block;
-        }
-        
-        .big-rating .stars {
-            margin: var(--spacing-sm) 0;
-        }
-        
-        .big-rating .stars .star {
-            font-size: 1.5rem;
-        }
-        
-        .review-count {
-            color: var(--gray-600);
-        }
-        
-        .rating-bars {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-        }
-        
-        .rating-bar-row {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-        
-        .star-label {
-            width: 50px;
-            font-size: 0.9rem;
-            color: var(--gray-700);
-        }
-        
-        .bar-container {
-            flex: 1;
-            height: 8px;
-            background: #eee;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ffc107, #ff9800);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        
-        .bar-count {
-            width: 40px;
-            text-align: right;
-            color: var(--gray-600);
-            font-size: 0.9rem;
-        }
-        
-        .review-form-container {
-            background: var(--white);
-            padding: var(--spacing-xl);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .review-form-container h3 {
-            margin-bottom: var(--spacing-lg);
-            color: var(--gray-900);
-        }
-        
-        .review-form {
-            max-width: 600px;
-        }
-        
-        .form-group {
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: var(--spacing-sm);
-            font-weight: 600;
-            color: var(--gray-800);
-        }
-        
-        .rating-selector {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            gap: 8px;
-        }
-        
-        .rating-selector input[type="radio"] {
-            display: none;
-        }
-        
-        .rating-selector .rating-star {
-            font-size: 2rem;
-            color: #ddd;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .rating-selector input[type="radio"]:checked ~ .rating-star,
-        .rating-selector .rating-star:hover,
-        .rating-selector .rating-star:hover ~ .rating-star {
-            color: #ffc107;
-        }
-        
-        .form-group textarea {
-            width: 100%;
-            padding: var(--spacing-md);
-            border: 1px solid var(--gray-300);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-            resize: vertical;
-            font-family: inherit;
-        }
-        
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-        }
-        
-        .reviews-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-lg);
-        }
-        
-        .review-item {
-            background: var(--white);
-            padding: var(--spacing-xl);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            position: relative;
-        }
-        
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .reviewer-info {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-        
-        .reviewer-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 1.2rem;
-            overflow: hidden;
-        }
-        
-        .reviewer-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .reviewer-details {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .reviewer-name {
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-        
-        .review-stars .star {
-            font-size: 0.9rem;
-        }
-        
-        .review-date {
-            color: var(--gray-500);
-            font-size: 0.9rem;
-        }
-        
-        .review-content {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .review-content p {
-            line-height: 1.7;
-            color: var(--gray-700);
-            margin: 0;
-        }
-        
-        .verified-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 12px;
-            background: #e8f5e9;
-            color: #2e7d32;
-            font-size: 0.8rem;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-        
-        .no-reviews {
-            text-align: center;
-            padding: var(--spacing-3xl);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            color: var(--gray-500);
-            font-size: 1.1rem;
-        }
-        
-        @media (max-width: 768px) {
-            .product-detail-grid {
-                grid-template-columns: 1fr;
-            }
+    if (starRating) {
+        const stars = starRating.querySelectorAll('.rating-star');
+        
+        // 默认选中5星
+        updateStars(5);
+        
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                selectedRating.value = rating;
+                updateStars(rating);
+            });
             
-            .product-image-section {
-                position: static;
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.rating);
+                previewStars(rating);
+            });
+        });
+        
+        starRating.addEventListener('mouseleave', function() {
+            updateStars(parseInt(selectedRating.value));
+        });
+    }
+    
+    function updateStars(rating) {
+        const stars = starRating.querySelectorAll('.rating-star');
+        stars.forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            if (starRating <= rating) {
+                star.classList.add('bi-star-fill');
+                star.classList.remove('bi-star');
+                star.style.color = '#ffc107';
+            } else {
+                star.classList.remove('bi-star-fill');
+                star.classList.add('bi-star');
+                star.style.color = '#ddd';
             }
-            
-            .product-stats {
-                grid-template-columns: repeat(2, 1fr);
+        });
+    }
+    
+    function previewStars(rating) {
+        const stars = starRating.querySelectorAll('.rating-star');
+        stars.forEach(star => {
+            const starRating = parseInt(star.dataset.rating);
+            if (starRating <= rating) {
+                star.classList.add('bi-star-fill');
+                star.classList.remove('bi-star');
+                star.style.color = '#ffc107';
+            } else {
+                star.classList.remove('bi-star-fill');
+                star.classList.add('bi-star');
+                star.style.color = '#ddd';
             }
-            
-            .rating-overview {
-                grid-template-columns: 1fr;
-            }
+        });
+    }
+});
+
+async function addToCart(productId) {
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 加入中...';
+    
+    try {
+        const response = await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('已加入购物车', 'success');
+            updateCartCount(data.cart_count);
+        } else {
+            showNotification(data.message || '加入失败', 'error');
         }
-    </style>
-</body>
-</html>
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+
+async function submitReview(event, productId) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    const originalHTML = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 提交中...';
+    
+    const rating = document.getElementById('selectedRating').value;
+    const content = document.getElementById('reviewContent').value;
+    
+    try {
+        const response = await fetch(`/product/review/${productId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `rating=${rating}&content=${encodeURIComponent(content)}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('评价成功！', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showNotification(data.message || '提交失败', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    }
+}
+</script>
+
+<style>
+.product-detail-section {
+    padding: 100px 0 60px;
+    background: linear-gradient(180deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+}
+
+.breadcrumb {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-item {
+    color: var(--color-gray-600);
+}
+
+.breadcrumb-item.active {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    color: var(--color-gray-400);
+}
+
+.product-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 3rem;
+    margin-bottom: 4rem;
+}
+
+.product-image-gallery {
+    position: sticky;
+    top: 100px;
+}
+
+.product-cover-wrapper {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+}
+
+.product-cover-main {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+}
+
+.product-type-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.badge-novel {
+    background: rgba(102, 126, 234, 0.95);
+    color: white;
+}
+
+.badge-music {
+    background: rgba(118, 75, 162, 0.95);
+    color: white;
+}
+
+.music-preview-section {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--color-gray-700);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.custom-audio {
+    width: 100%;
+    border-radius: var(--radius-md);
+}
+
+.product-info-panel {
+    background: var(--color-white);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.product-header {
+    margin-bottom: 2rem;
+}
+
+.product-category {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    background: var(--color-gray-100);
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.product-title {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.product-creator {
+    color: var(--color-gray-600);
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.product-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--color-gray-50);
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+}
+
+.metric-item {
+    text-align: center;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+    margin-bottom: 0.3rem;
+}
+
+.metric-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-gray-800);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
+.metric-value.price {
+    color: var(--color-primary);
+    font-size: 1.8rem;
+}
+
+.stars-display {
+    display: inline-flex;
+    gap: 0.15rem;
+}
+
+.stars-display i,
+.stars-mini i {
+    color: #ffc107;
+    font-size: 0.9rem;
+}
+
+.rating-number {
+    margin-left: 0.3rem;
+}
+
+.product-description-section {
+    margin-bottom: 2rem;
+}
+
+.section-heading {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-gray-800);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.description-content {
+    color: var(--color-gray-600);
+    line-height: 1.7;
+}
+
+.product-actions {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+.btn-large {
+    padding: 1rem 1.5rem;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    font-weight: 600;
+}
+
+.btn-gradient {
+    background: var(--color-primary-gradient);
+    border: none;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.purchase-status-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+}
+
+.reviews-section {
+    padding-top: 2rem;
+}
+
+.reviews-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reviews-count {
+    font-size: 1rem;
+    color: var(--color-gray-500);
+}
+
+.review-form-card {
+    background: var(--color-white);
+    padding: 2rem;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+}
+
+.form-title {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--color-gray-700);
+}
+
+.rating-selector {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.rating-selector .rating-star {
+    font-size: 1.8rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rating-selector .rating-star:hover {
+    transform: scale(1.1);
+}
+
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.review-item {
+    background: var(--color-white);
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.reviewer-info {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.reviewer-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+.reviewer-details {
+    flex: 1;
+}
+
+.reviewer-name {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: var(--color-gray-800);
+}
+
+.review-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    color: var(--color-gray-500);
+}
+
+.verified-purchase {
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 500;
+}
+
+.review-content {
+    color: var(--color-gray-600);
+    line-height: 1.7;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-gray-500);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 968px) {
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .product-image-gallery {
+        position: static;
+    }
+    
+    .product-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .product-title {
+        font-size: 1.5rem;
+    }
+    
+    .product-metrics {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+
+<?php require __DIR__ . '/_footer.phtml'; ?>

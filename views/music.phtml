@@ -1,65 +1,31 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音乐商城 - BookMusic Mall</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link rel="icon" type="image/svg+xml" href="/assets/images/favicon.svg">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="navbar-content">
-                <a href="/" class="navbar-brand">
-                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 2C10.06 2 2 10.06 2 20s8.06 18 18 18 18-8.06 18-18S29.94 2 20 2zm0 4c7.73 0 14 6.27 14 14s-6.27 14-14 14S6 25.73 6 20 12.27 6 20 6zm-4 6v16l12-8-12-8z"/>
-                    </svg>
-                    <span>BookMusic Mall</span>
-                </a>
-                
-                <ul class="navbar-nav">
-                    <li><a href="/">首页</a></li>
-                    <li><a href="/novels">小说</a></li>
-                    <li><a href="/music" class="active">音乐</a></li>
-                    <?php if (isLoggedIn()): ?>
-                        <li><a href="/cart" class="cart-link">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;">
-                                <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                            购物车
-                        </a></li>
-                    <?php endif; ?>
-                </ul>
-                
-                <div class="navbar-actions">
-                    <?php if (isLoggedIn()): ?>
-                        <a href="/user/" class="btn btn-secondary">用户中心</a>
-                        <a href="/logout" class="btn btn-outline">退出</a>
-                    <?php else: ?>
-                        <a href="/login" class="btn btn-secondary">登录</a>
-                        <a href="/register" class="btn btn-primary">注册</a>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    </nav>
+<?php require __DIR__ . '/_header.phtml'; ?>
 
-    <section class="page-content">
-        <div class="container">
-            <div class="page-header">
-                <h1>音乐商城</h1>
-                <p>动听旋律，触动心灵</p>
-            </div>
-            
-            <div class="filter-bar">
-                <form method="GET" class="search-form">
+<section class="products-page">
+    <div class="container">
+        <!-- 页面标题区 -->
+        <div class="page-header-section">
+            <h1 class="page-title">
+                <i class="bi bi-music-note-beamed"></i> 音乐商城
+            </h1>
+            <p class="page-subtitle">动听旋律，触动心灵</p>
+        </div>
+
+        <!-- 搜索和筛选区 -->
+        <div class="filter-toolbar">
+            <form method="GET" class="search-form">
+                <div class="search-input-wrapper">
+                    <i class="bi bi-search"></i>
                     <input type="text" name="search" placeholder="搜索歌曲名称或歌手..." 
                            value="<?= e($search) ?>" class="search-input">
-                    <button type="submit" class="btn btn-primary">搜索</button>
-                </form>
-                
-                <div class="filter-options">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> 搜索
+                </button>
+            </form>
+
+            <div class="filter-options">
+                <div class="filter-select-wrapper">
+                    <i class="bi bi-funnel"></i>
                     <select name="category" onchange="this.form.submit()" class="filter-select">
                         <option value="0">全部分类</option>
                         <?php foreach ($categories as $cat): ?>
@@ -68,7 +34,10 @@
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    
+                </div>
+
+                <div class="filter-select-wrapper">
+                    <i class="bi bi-sort-down-alt"></i>
                     <select name="sort" onchange="this.form.submit()" class="filter-select">
                         <option value="latest" <?= $sort === 'latest' ? 'selected' : '' ?>>最新上架</option>
                         <option value="hot" <?= $sort === 'hot' ? 'selected' : '' ?>>最热门</option>
@@ -77,167 +46,585 @@
                     </select>
                 </div>
             </div>
-            
-            <?php if (empty($music)): ?>
-                <div class="empty-state">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="var(--gray-400)">
-                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                    </svg>
-                    <h3>暂无音乐</h3>
-                    <p>没有找到符合条件的音乐，请尝试其他搜索条件</p>
-                </div>
-            <?php else: ?>
-                <div class="products-grid">
-                    <?php foreach ($music as $item): ?>
-                        <div class="product-card" onclick="window.location.href='/product/<?= $item['id'] ?>'">
-                            <img src="/uploads/cover/<?= e($item['cover']) ?>" alt="<?= e($item['title']) ?>" class="product-image">
-                            <div class="product-info">
-                                <span class="product-category"><?= e($item['category_name'] ?? '音乐') ?></span>
-                                <h3 class="product-title"><?= e($item['title']) ?></h3>
-                                <p class="product-author">歌手：<?= e($item['author']) ?></p>
-                                <div class="product-footer">
-                                    <span class="product-price"><?= formatPrice($item['price']) ?></span>
-                                    <div class="product-stats">
-                                        <span>销量 <?= $item['sales'] ?></span>
-                                    </div>
+        </div>
+
+        <!-- 产品网格 -->
+        <?php if (empty($music)): ?>
+            <div class="empty-state">
+                <i class="bi bi-music-note-list"></i>
+                <h3>暂无音乐</h3>
+                <p>没有找到符合条件的音乐，请尝试其他搜索条件</p>
+                <a href="/music" class="btn btn-primary">
+                    <i class="bi bi-arrow-counterclockwise"></i> 查看全部
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="products-grid">
+                <?php foreach ($music as $index => $item): ?>
+                    <div class="product-card animate-ready" style="animation-delay: <?= $index * 0.05 ?>s">
+                        <div class="product-image-wrapper">
+                            <img src="/uploads/cover/<?= e($item['cover']) ?>" 
+                                 alt="<?= e($item['title']) ?>" 
+                                 class="product-image"
+                                 style="aspect-ratio: 1/1;"
+                                 loading="lazy">
+                            <div class="product-hover-overlay">
+                                <a href="/product/<?= $item['id'] ?>" class="btn btn-outline btn-sm">
+                                    <i class="bi bi-eye"></i> 查看详情
+                                </a>
+                            </div>
+                            <?php if ($item['sales'] > 100): ?>
+                                <span class="hot-badge">
+                                    <i class="bi bi-fire"></i> 热销
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="product-content">
+                            <span class="product-category" style="background: rgba(118, 75, 162, 0.1); color: #764ba2;">
+                                <i class="bi bi-tag"></i>
+                                <?= e($item['category_name'] ?? '音乐') ?>
+                            </span>
+                            <h3 class="product-title"><?= e($item['title']) ?></h3>
+                            <p class="product-author">
+                                <i class="bi bi-mic"></i> <?= e($item['author']) ?>
+                            </p>
+                            <div class="product-stats">
+                                <div class="stat-mini">
+                                    <i class="bi bi-cart"></i>
+                                    <span><?= $item['sales'] ?></span>
+                                </div>
+                                <div class="stat-mini">
+                                    <i class="bi bi-star"></i>
+                                    <span><?= number_format($item['rating_avg'] ?? 0, 1) ?></span>
                                 </div>
                             </div>
+                            <div class="product-footer">
+                                <span class="product-price" style="color: #764ba2;">
+                                    <span class="price-symbol">¥</span><?= number_format($item['price'], 2) ?>
+                                </span>
+                                <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); addToCart(<?= $item['id'] ?>)">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </div>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-                
-                <?php if ($pagination['total_pages'] > 1): ?>
-                    <div class="pagination">
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- 分页 -->
+            <?php if ($pagination['total_pages'] > 1): ?>
+                <div class="pagination-container">
+                    <nav class="pagination">
                         <?php if ($pagination['has_previous']): ?>
                             <a href="?page=<?= $page - 1 ?>&category=<?= $category ?>&sort=<?= $sort ?>&search=<?= urlencode($search) ?>" 
-                               class="btn btn-outline">上一页</a>
+                               class="pagination-btn prev">
+                                <i class="bi bi-chevron-left"></i> 上一页
+                            </a>
                         <?php endif; ?>
-                        
-                        <span class="page-info">
-                            第 <?= $page ?> / <?= $pagination['total_pages'] ?> 页
-                        </span>
-                        
+
+                        <div class="pagination-numbers">
+                            <?php 
+                            $start = max(1, $page - 2);
+                            $end = min($pagination['total_pages'], $page + 2);
+                            if ($start > 1): ?>
+                                <a href="?page=1&category=<?= $category ?>&sort=<?= $sort ?>&search=<?= urlencode($search) ?>" class="pagination-number">1</a>
+                                <?php if ($start > 2): ?>
+                                    <span class="pagination-ellipsis">...</span>
+                                <?php endif; ?>
+                            <?php endif; ?>
+
+                            <?php for ($i = $start; $i <= $end; $i++): ?>
+                                <a href="?page=<?= $i ?>&category=<?= $category ?>&sort=<?= $sort ?>&search=<?= urlencode($search) ?>" 
+                                   class="pagination-number <?= $i == $page ? 'active' : '' ?>"
+                                   style="<?= $i == $page ? 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);' : '' ?>">
+                                    <?= $i ?>
+                                </a>
+                            <?php endfor; ?>
+
+                            <?php if ($end < $pagination['total_pages']): ?>
+                                <?php if ($end < $pagination['total_pages'] - 1): ?>
+                                    <span class="pagination-ellipsis">...</span>
+                                <?php endif; ?>
+                                <a href="?page=<?= $pagination['total_pages'] ?>&category=<?= $category ?>&sort=<?= $sort ?>&search=<?= urlencode($search) ?>" 
+                                   class="pagination-number">
+                                    <?= $pagination['total_pages'] ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+
                         <?php if ($pagination['has_next']): ?>
                             <a href="?page=<?= $page + 1 ?>&category=<?= $category ?>&sort=<?= $sort ?>&search=<?= urlencode($search) ?>" 
-                               class="btn btn-outline">下一页</a>
+                               class="pagination-btn next">
+                                下一页 <i class="bi bi-chevron-right"></i>
+                            </a>
                         <?php endif; ?>
+                    </nav>
+
+                    <div class="pagination-info">
+                        第 <strong><?= $page ?></strong> / <strong><?= $pagination['total_pages'] ?></strong> 页 
+                        · 共 <strong><?= $pagination['total_items'] ?></strong> 件商品
                     </div>
-                <?php endif; ?>
+                </div>
             <?php endif; ?>
-        </div>
-    </section>
+        <?php endif; ?>
+    </div>
+</section>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; <?= date('Y') ?> BookMusic Mall. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+<script src="/assets/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
 
-    <script src="/assets/js/main.js"></script>
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    document.querySelectorAll('.product-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+        observer.observe(card);
+    });
+});
+
+async function addToCart(productId) {
+    try {
+        const response = await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('已加入购物车', 'success');
+            updateCartCount(data.cart_count);
+        } else {
+            showNotification(data.message || '加入失败', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    }
+}
+</script>
+
+<style>
+.products-page {
+    padding: 120px 0 60px;
+    background: linear-gradient(180deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+}
+
+.page-header-section {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.page-title {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.page-subtitle {
+    color: var(--color-gray-600);
+    font-size: 1.1rem;
+}
+
+.filter-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding: 1.5rem;
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    flex-wrap: wrap;
+}
+
+.search-form {
+    display: flex;
+    gap: 0.75rem;
+    flex: 1;
+    max-width: 500px;
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-wrapper i {
+    position: absolute;
+    left: 1rem;
+    color: var(--color-gray-400);
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-family: var(--font-body);
+    transition: all var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.filter-options {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.filter-select-wrapper i {
+    position: absolute;
+    left: 1rem;
+    color: var(--color-gray-400);
+    pointer-events: none;
+}
+
+.filter-select {
+    padding: 0.8rem 1rem 0.8rem 2.5rem;
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    font-size: 0.95rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+    background: var(--color-white);
+    transition: all var(--transition-fast);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.75rem;
+    margin-bottom: 3rem;
+}
+
+.product-card {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+}
+
+.product-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1/1;
+    background: var(--color-gray-100);
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.08);
+}
+
+.product-hover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent 50%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.product-card:hover .product-hover-overlay {
+    opacity: 1;
+}
+
+.hot-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.3rem 0.75rem;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    box-shadow: 0 2px 8px rgba(238, 90, 36, 0.3);
+}
+
+.product-content {
+    padding: 1.25rem;
+}
+
+.product-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    margin-bottom: 0.5rem;
+}
+
+.product-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-author {
+    color: var(--color-gray-500);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.product-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--color-gray-500);
+    font-size: 0.85rem;
+}
+
+.stat-mini i {
+    color: #764ba2;
+}
+
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.product-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.price-symbol {
+    font-size: 1rem;
+}
+
+.btn-icon {
+    padding: 0.6rem 0.8rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-gray-500);
+}
+
+.empty-state i {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-gray-700);
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+}
+
+.pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-white);
+    border: 2px solid var(--color-gray-200);
+    color: var(--color-gray-700);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.pagination-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pagination-number {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-white);
+    border: 2px solid var(--color-gray-200);
+    color: var(--color-gray-700);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.pagination-number:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.pagination-number.active {
+    background: var(--color-primary-gradient);
+    border-color: transparent;
+    color: var(--color-white);
+}
+
+.pagination-ellipsis {
+    padding: 0 0.5rem;
+    color: var(--color-gray-400);
+    font-weight: 700;
+}
+
+.pagination-info {
+    color: var(--color-gray-500);
+    font-size: 0.95rem;
+}
+
+@media (max-width: 968px) {
+    .filter-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
     
-    <style>
-        .page-content {
-            padding-top: 120px;
-            min-height: calc(100vh - 80px);
-        }
-        
-        .page-header {
-            text-align: center;
-            margin-bottom: var(--spacing-2xl);
-        }
-        
-        .page-header h1 {
-            font-size: 3rem;
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .page-header p {
-            color: var(--gray-600);
-            font-size: 1.2rem;
-        }
-        
-        .filter-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-2xl);
-            padding: var(--spacing-lg);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .search-form {
-            display: flex;
-            gap: var(--spacing-md);
-            flex: 1;
-            max-width: 500px;
-        }
-        
-        .search-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid var(--gray-200);
-            border-radius: var(--radius-md);
-            font-size: 1rem;
-        }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-        
-        .filter-options {
-            display: flex;
-            gap: var(--spacing-md);
-        }
-        
-        .filter-select {
-            padding: 0.75rem 1rem;
-            border: 2px solid var(--gray-200);
-            border-radius: var(--radius-md);
-            font-size: 0.95rem;
-            cursor: pointer;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: var(--spacing-3xl);
-            color: var(--gray-500);
-        }
-        
-        .empty-state svg {
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: var(--spacing-lg);
-            margin-top: var(--spacing-2xl);
-        }
-        
-        .page-info {
-            color: var(--gray-600);
-        }
-        
-        @media (max-width: 768px) {
-            .filter-bar {
-                flex-direction: column;
-            }
-            
-            .search-form {
-                max-width: 100%;
-            }
-            
-            .filter-options {
-                width: 100%;
-            }
-        }
-    </style>
-</body>
-</html>
+    .search-form {
+        max-width: 100%;
+    }
+    
+    .filter-options {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .filter-select-wrapper {
+        flex: 1;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .page-title {
+        font-size: 1.75rem;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .pagination-btn {
+        order: -1;
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<?php require __DIR__ . '/_footer.phtml'; ?>

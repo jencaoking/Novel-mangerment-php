@@ -5,6 +5,7 @@ use App\Models\UserModel;
 use App\Models\ProductModel;
 use App\Models\OrderModel;
 use App\Models\CategoryModel;
+use App\Models\ReviewModel;
 
 class AdminController
 {
@@ -14,6 +15,7 @@ class AdminController
     protected $productModel;
     protected $orderModel;
     protected $categoryModel;
+    protected $reviewModel;
 
     public function __construct()
     {
@@ -21,6 +23,7 @@ class AdminController
         $this->productModel = new ProductModel();
         $this->orderModel = new OrderModel();
         $this->categoryModel = new CategoryModel();
+        $this->reviewModel = new ReviewModel();
     }
 
     public function dashboard()
@@ -377,5 +380,66 @@ class AdminController
             }
         }
         redirect("/admin/products/edit/{$productId}");
+    }
+
+    /**
+     * 评价管理列表页
+     */
+    public function reviews() {
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $search = trim($_GET['search'] ?? '');
+        $perPage = 15;
+
+        // 获取数据和分页
+        $total = $this->reviewModel->getAdminReviewsCount($search);
+        $pagination = paginate($total, $page, $perPage);
+        $reviews = $this->reviewModel->getAdminReviews($page, $perPage, $search);
+
+        // 设置页面标题
+        $pageTitle = '评价管理';
+        $currentPage = 'reviews';
+        
+        require __DIR__ . '/../../views/admin/reviews.phtml';
+    }
+
+    /**
+     * 异步切换评价状态（隐藏/显示）
+     */
+    public function toggleReviewStatus($id) {
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => '无效的请求方式']);
+            return;
+        }
+
+        $reviewId = (int)$id;
+        if ($reviewId <= 0) {
+            echo json_encode(['success' => false, 'message' => '无效的评价ID']);
+            return;
+        }
+
+        try {
+            // 获取当前评价状态
+            $review = $this->reviewModel->find($reviewId);
+            if (!$review) {
+                echo json_encode(['success' => false, 'message' => '评价不存在']);
+                return;
+            }
+
+            $this->reviewModel->toggleStatus($reviewId);
+            
+            // 同时更新商品的平均评分和评价数
+            $stats = $this->reviewModel->calculateProductStats($review['product_id']);
+            $this->productModel->updateRatingStats($review['product_id'], $stats['avg_rating'], $stats['review_count']);
+            
+            echo json_encode([
+                'success' => true, 
+                'message' => $review['status'] == 1 ? '评价已隐藏' : '评价已显示'
+            ]);
+        } catch (\Exception $e) {
+            error_log('切换评价状态失败: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => '操作失败，请稍后重试']);
+        }
     }
 }

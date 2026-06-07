@@ -1,0 +1,118 @@
+<?php require __DIR__ . '/_header.phtml'; ?>
+
+<div class="admin-header">
+    <h2><?= e($pageTitle ?? '评价管理') ?></h2>
+    
+    <div class="admin-actions">
+        <form method="GET" action="/admin/reviews" class="search-form">
+            <input type="text" name="search" value="<?= e($search ?? '') ?>" placeholder="搜索用户、商品或内容..." class="form-control" style="width: 250px; display: inline-block;">
+            <button type="submit" class="btn btn-secondary">搜索</button>
+            <?php if (!empty($search)): ?>
+                <a href="/admin/reviews" class="btn btn-outline">清除</a>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>商品信息</th>
+                    <th>评价用户</th>
+                    <th>评分</th>
+                    <th width="35%">评价内容</th>
+                    <th>时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($reviews)): ?>
+                    <tr>
+                        <td colspan="8" class="text-center" style="padding: 30px;">暂无评价数据</td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($reviews as $review): ?>
+                        <tr>
+                            <td><?= e($review['id']) ?></td>
+                            <td>
+                                <a href="/product/<?= e($review['product_id']) ?>" target="_blank" style="color: var(--primary-color);">
+                                    <?= e($review['product_title'] ?? '未知商品') ?>
+                                </a>
+                            </td>
+                            <td><?= e($review['username'] ?? '未知用户') ?></td>
+                            <td>
+                                <span style="color: #f5a623;"><?= str_repeat('⭐', (int)$review['rating']) ?></span>
+                            </td>
+                            <td>
+                                <div style="max-height: 60px; overflow-y: auto; font-size: 0.9rem; color: #555;">
+                                    <?= nl2br(e($review['content'] ?? '无评价内容')) ?>
+                                </div>
+                            </td>
+                            <td style="font-size: 0.85rem; color: #888;"><?= e($review['create_time']) ?></td>
+                            <td>
+                                <?php if ($review['status'] == 1): ?>
+                                    <span class="badge badge-success" style="background: #efe; color: #2e8b57; padding: 4px 8px; border-radius: 4px;">正常显示</span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger" style="background: #fee; color: #d9534f; padding: 4px 8px; border-radius: 4px;">已隐藏</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <button type="button" 
+                                        class="btn <?= $review['status'] == 1 ? 'btn-danger' : 'btn-success' ?> btn-sm" 
+                                        onclick="toggleReviewStatus(<?= $review['id'] ?>)" 
+                                        style="padding: 4px 10px; font-size: 0.85rem;">
+                                    <?= $review['status'] == 1 ? '隐藏' : '恢复显示' ?>
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    
+    <?php if (isset($pagination) && $pagination['total_pages'] > 1): ?>
+        <div class="pagination" style="margin-top: 20px; text-align: right;">
+            <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
+                <a href="?page=<?= $i ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
+                   class="btn <?= ($pagination['current_page'] ?? 1) == $i ? 'btn-primary' : 'btn-outline' ?> btn-sm">
+                    <?= $i ?>
+                </a>
+            <?php endfor; ?>
+        </div>
+    <?php endif; ?>
+</div>
+
+<script>
+function toggleReviewStatus(id) {
+    if (!confirm('确定要更改此评价的显示状态吗？')) {
+        return;
+    }
+
+    fetch(`/admin/reviews/toggle/${id}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // 刷新当前页面以更新状态
+            window.location.reload();
+        } else {
+            alert(data.message || '操作失败');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('网络错误，请稍后再试');
+    });
+}
+</script>
+
+<?php require __DIR__ . '/_footer.phtml'; ?>

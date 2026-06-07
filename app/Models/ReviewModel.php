@@ -90,4 +90,73 @@ class ReviewModel extends BaseModel {
                 ORDER BY rating DESC";
         return $this->fetchAll($sql, [$productId]);
     }
+
+    /**
+     * 获取后台评价列表（包含用户名和商品名）
+     */
+    public function getAdminReviews($page = 1, $perPage = 20, $search = '') {
+        $offset = ($page - 1) * $perPage;
+        $params = [];
+        
+        $sql = "SELECT r.*, u.username, p.title as product_title 
+                FROM {$this->table} r 
+                LEFT JOIN users u ON r.user_id = u.id 
+                LEFT JOIN products p ON r.product_id = p.id 
+                WHERE 1=1";
+        
+        if (!empty($search)) {
+            // LIKE 查询特殊字符转义，防止通配符攻击
+            $searchEscaped = '%' . str_replace(['%', '_'], ['\%', '\_'], $search) . '%';
+            $sql .= " AND (u.username LIKE ? OR p.title LIKE ? OR r.content LIKE ?)";
+            $params = array_fill(0, 3, $searchEscaped);
+        }
+        
+        $sql .= " ORDER BY r.create_time DESC LIMIT ?, ?";
+        $params[] = $offset;
+        $params[] = $perPage;
+        
+        return $this->fetchAll($sql, $params);
+    }
+
+    /**
+     * 获取后台评价总数（用于分页）
+     */
+    public function getAdminReviewsCount($search = '') {
+        $params = [];
+        $sql = "SELECT COUNT(*) as total 
+                FROM {$this->table} r 
+                LEFT JOIN users u ON r.user_id = u.id 
+                LEFT JOIN products p ON r.product_id = p.id 
+                WHERE 1=1";
+                
+        if (!empty($search)) {
+            // LIKE 查询特殊字符转义，防止通配符攻击
+            $searchEscaped = '%' . str_replace(['%', '_'], ['\%', '\_'], $search) . '%';
+            $sql .= " AND (u.username LIKE ? OR p.title LIKE ? OR r.content LIKE ?)";
+            $params = array_fill(0, 3, $searchEscaped);
+        }
+        
+        $result = $this->fetch($sql, $params);
+        return $result ? (int)$result['total'] : 0;
+    }
+
+    /**
+     * 切换评价状态（1-正常，0-隐藏）
+     */
+    public function toggleStatus($id) {
+        $sql = "UPDATE {$this->table} SET status = 1 - status WHERE id = ?";
+        return $this->execute($sql, [$id]);
+    }
+
+    /**
+     * 根据ID获取评价详情
+     */
+    public function find($id) {
+        $sql = "SELECT r.*, u.username, p.title as product_title 
+                FROM {$this->table} r 
+                LEFT JOIN users u ON r.user_id = u.id 
+                LEFT JOIN products p ON r.product_id = p.id 
+                WHERE r.id = ?";
+        return $this->fetch($sql, [$id]);
+    }
 }

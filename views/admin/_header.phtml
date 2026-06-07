@@ -50,6 +50,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="/admin/reviews" class="nav-link <?= isset($currentPage) && $currentPage === 'reviews' ? 'active' : '' ?>">
+                        <i class="bi bi-chat-left-text"></i>
+                        <span>评价管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="/admin/stats" class="nav-link <?= isset($currentPage) && $currentPage === 'stats' ? 'active' : '' ?>">
                         <i class="bi bi-bar-chart"></i>
                         <span>数据统计</span>

@@ -161,6 +161,10 @@ try {
     $router->get('/admin/stats', 'AdminController@stats', ['AdminMiddleware']);
     $router->post('/admin/upload', 'AdminController@upload', ['AdminMiddleware']);
     
+    // 评价管理路由
+    $router->get('/admin/reviews', 'AdminController@reviews', ['AdminMiddleware']);
+    $router->post('/admin/reviews/toggle/{id}', 'AdminController@toggleReviewStatus', ['AdminMiddleware']);
+    
     // 启动路由
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';

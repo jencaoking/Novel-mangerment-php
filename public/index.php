@@ -147,6 +147,16 @@ try {
     $router->get('/admin/dashboard', 'AdminController@dashboard', ['AdminMiddleware']);
     $router->get('/admin/products', 'AdminController@products', ['AdminMiddleware']);
 
+    // Sentry 测试路由
+    $router->get('/sentry-test', function () {
+        try {
+            throw new Exception('这是一个测试异常，用于验证 Sentry 错误监控是否正常工作');
+        } catch (\Throwable $exception) {
+            \Sentry\captureException($exception);
+            echo "Sentry 测试异常已发送！请检查 Sentry 控制台。";
+        }
+    });
+
     // 商品上下架、编辑和删除的路由
     $router->post('/admin/products/toggle_status', 'AdminController@toggleProductStatus', ['AdminMiddleware']);
     $router->get('/admin/products/edit/{id}', 'AdminController@editProduct', ['AdminMiddleware']);

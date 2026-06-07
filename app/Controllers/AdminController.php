@@ -1,5 +1,4 @@
-
-&lt;?php
+<?php
 namespace App\Controllers;
 
 use App\Models\UserModel;
@@ -18,27 +17,27 @@ class AdminController
 
     public function __construct()
     {
-        $this-&gt;userModel = new UserModel();
-        $this-&gt;productModel = new ProductModel();
-        $this-&gt;orderModel = new OrderModel();
-        $this-&gt;categoryModel = new CategoryModel();
+        $this->userModel = new UserModel();
+        $this->productModel = new ProductModel();
+        $this->orderModel = new OrderModel();
+        $this->categoryModel = new CategoryModel();
     }
 
     public function dashboard()
     {
-        $orderStats = $this-&gt;orderModel-&gt;getStats();
+        $orderStats = $this->orderModel->getStats();
         $stats = [
-            'totalUsers' =&gt; $this-&gt;userModel-&gt;count(),
-            'totalOrders' =&gt; $this-&gt;orderModel-&gt;count(),
-            'totalProducts' =&gt; $this-&gt;productModel-&gt;count(),
-            'totalRevenue' =&gt; $orderStats['total_revenue'] ?? 0,
-            'todayRevenue' =&gt; $orderStats['today_revenue'] ?? 0,
-            'pendingOrders' =&gt; $orderStats['pending_count'] ?? 0
+            'totalUsers' => $this->userModel->count(),
+            'totalOrders' => $this->orderModel->count(),
+            'totalProducts' => $this->productModel->count(),
+            'totalRevenue' => $orderStats['total_revenue'] ?? 0,
+            'todayRevenue' => $orderStats['today_revenue'] ?? 0,
+            'pendingOrders' => $orderStats['pending_count'] ?? 0
         ];
 
-        $topProducts = $this-&gt;productModel-&gt;getTopProducts(10);
-        $recentOrders = $this-&gt;orderModel-&gt;getRecentOrders(10);
-        $dailyOrderStats = $this-&gt;orderModel-&gt;getDailyOrderStats(7);
+        $topProducts = $this->productModel->getTopProducts(10);
+        $recentOrders = $this->orderModel->getRecentOrders(10);
+        $dailyOrderStats = $this->orderModel->getDailyOrderStats(7);
 
         require __DIR__ . '/../../views/admin/dashboard.phtml';
     }
@@ -49,10 +48,10 @@ class AdminController
         $type = $_GET['type'] ?? '';
         $search = $_GET['search'] ?? '';
 
-        $total = $this-&gt;productModel-&gt;searchAdminProductsCount($type, $search);
+        $total = $this->productModel->searchAdminProductsCount($type, $search);
         $pagination = paginate($total, $page, 20);
-        $products = $this-&gt;productModel-&gt;searchAdminProducts($type, $search, $page, 20);
-        $categories = $this-&gt;categoryModel-&gt;getAllCategories();
+        $products = $this->productModel->searchAdminProducts($type, $search, $page, 20);
+        $categories = $this->categoryModel->getAllCategories();
 
         require __DIR__ . '/../../views/admin/products.phtml';
     }
@@ -62,9 +61,9 @@ class AdminController
         $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
         $search = $_GET['search'] ?? '';
 
-        $total = $this-&gt;userModel-&gt;searchAdminUsersCount($search);
+        $total = $this->userModel->searchAdminUsersCount($search);
         $pagination = paginate($total, $page, 20);
-        $users = $this-&gt;userModel-&gt;searchAdminUsers($search, $page, 20);
+        $users = $this->userModel->searchAdminUsers($search, $page, 20);
 
         require __DIR__ . '/../../views/admin/users.phtml';
     }
@@ -80,8 +79,8 @@ class AdminController
                 redirect('/admin/users');
             }
 
-            if ($action === 'toggle_status' &amp;&amp; $userId) {
-                $user = $this-&gt;userModel-&gt;find($userId);
+            if ($action === 'toggle_status' && $userId) {
+                $user = $this->userModel->find($userId);
 
                 if ($user) {
                     if ($user['role'] === 'admin') {
@@ -95,7 +94,7 @@ class AdminController
                         redirect('/admin/users');
                     }
                     
-                    $this-&gt;userModel-&gt;toggleStatus($userId);
+                    $this->userModel->toggleStatus($userId);
                 }
             }
         }
@@ -111,9 +110,9 @@ class AdminController
         $allowedStatus = ['pending', 'paid', 'completed', 'cancelled'];
         $filterStatus = (in_array($status, $allowedStatus)) ? $status : '';
 
-        $total = $this-&gt;orderModel-&gt;searchAdminOrdersCount($filterStatus);
+        $total = $this->orderModel->searchAdminOrdersCount($filterStatus);
         $pagination = paginate($total, $page, 20);
-        $orders = $this-&gt;orderModel-&gt;searchAdminOrders($filterStatus, $page, 20);
+        $orders = $this->orderModel->searchAdminOrders($filterStatus, $page, 20);
 
         require __DIR__ . '/../../views/admin/orders.phtml';
     }
@@ -134,7 +133,7 @@ class AdminController
         $action = $_POST['action'] ?? '';
         $orderId = (int)($_POST['order_id'] ?? 0);
 
-        if ($action !== 'update_status' || $orderId &lt;= 0) {
+        if ($action !== 'update_status' || $orderId <= 0) {
             redirect('/admin/orders');
             return;
         }
@@ -148,7 +147,7 @@ class AdminController
             return;
         }
 
-        $this-&gt;orderModel-&gt;updateStatus($orderId, $newStatus);
+        $this->orderModel->updateStatus($orderId, $newStatus);
 
         $currentStatus = $_GET['status'] ?? '';
         $redirectUrl = '/admin/orders';
@@ -161,14 +160,13 @@ class AdminController
 
     public function stats()
     {
-        $monthlyStats = $this-&gt;orderModel-&gt;getMonthlyStats(6);
+        $monthlyStats = $this->orderModel->getMonthlyStats(6);
         
-        // 处理数据格式，确保有6个月的数据
         $labels = [];
         $revenueData = [];
         $orderData = [];
         
-        for ($i = 5; $i &gt;= 0; $i--) {
+        for ($i = 5; $i >= 0; $i--) {
             $month = date('Y-m', strtotime("first day of -$i month"));
             $labels[] = date('n月', strtotime($month . '-01'));
             
@@ -220,7 +218,7 @@ class AdminController
             $fileDir = '';
 
             try {
-                if ($productId &lt;= 0 &amp;&amp; !in_array($type, ['novel', 'music'])) {
+                if ($productId <= 0 && !in_array($type, ['novel', 'music'])) {
                     throw new \Exception('非法类型');
                 }
 
@@ -246,7 +244,7 @@ class AdminController
                     throw new \Exception('文件上传失败: ' . $fileResult['message']);
                 }
 
-                if ($type === 'music' &amp;&amp; isset($_FILES['preview']) &amp;&amp; $_FILES['preview']['error'] === UPLOAD_ERR_OK) {
+                if ($type === 'music' && isset($_FILES['preview']) && $_FILES['preview']['error'] === UPLOAD_ERR_OK) {
                     $previewResult = uploadFile($_FILES['preview'], $uploadDir . 'preview/', ['mp3'], MAX_MUSIC_SIZE);
                     if ($previewResult['success']) {
                         $previewPath = $previewResult['filename'];
@@ -254,32 +252,32 @@ class AdminController
                 }
 
                 $data = [
-                    'title' =&gt; $title,
-                    'type' =&gt; $type,
-                    'category_id' =&gt; $categoryId,
-                    'author' =&gt; $author,
-                    'description' =&gt; $description,
-                    'cover' =&gt; $coverResult['filename'],
-                    'file_path' =&gt; $fileResult['filename'],
-                    'preview_path' =&gt; $previewPath,
-                    'price' =&gt; $price
+                    'title' => $title,
+                    'type' => $type,
+                    'category_id' => $categoryId,
+                    'author' => $author,
+                    'description' => $description,
+                    'cover' => $coverResult['filename'],
+                    'file_path' => $fileResult['filename'],
+                    'preview_path' => $previewPath,
+                    'price' => $price
                 ];
-                $this-&gt;productModel-&gt;create($data);
+                $this->productModel->create($data);
 
                 redirect('/admin/products?success=1');
 
             } catch (\Exception $e) {
-                if ($coverResult &amp;&amp; isset($coverResult['filename'])) {
+                if ($coverResult && isset($coverResult['filename'])) {
                     @unlink($uploadDir . 'cover/' . $coverResult['filename']);
                 }
-                if ($fileResult &amp;&amp; isset($fileResult['filename']) &amp;&amp; $fileDir) {
+                if ($fileResult && isset($fileResult['filename']) && $fileDir) {
                     @unlink($uploadDir . $fileDir . $fileResult['filename']);
                 }
                 if ($previewPath) {
                     @unlink($uploadDir . 'preview/' . $previewPath);
                 }
 
-                $_SESSION['error'] = '添加商品失败: ' . $e-&gt;getMessage();
+                $_SESSION['error'] = '添加商品失败: ' . $e->getMessage();
                 redirect('/admin/products');
             }
         }
@@ -294,8 +292,8 @@ class AdminController
                 return;
             } else {
                 $productId = (int)($_POST['product_id'] ?? 0);
-                if ($productId &gt; 0) {
-                    $this-&gt;productModel-&gt;toggleStatus($productId);
+                if ($productId > 0) {
+                    $this->productModel->toggleStatus($productId);
                     $_SESSION['success'] = '商品状态更新成功！';
                 }
             }
@@ -312,11 +310,11 @@ class AdminController
                 return;
             } else {
                 $productId = (int)($_POST['product_id'] ?? 0);
-                $product = $this-&gt;productModel-&gt;find($productId);
+                $product = $this->productModel->find($productId);
                 
                 if ($product) {
                     try {
-                        $this-&gt;productModel-&gt;delete($productId);
+                        $this->productModel->delete($productId);
                         
                         $uploadDir = UPLOAD_PATH;
                         $fileDir = $product['type'] === 'novel' ? 'novels/' : 'music/';
@@ -339,14 +337,14 @@ class AdminController
 
     public function editProduct($id)
     {
-        $product = $this-&gt;productModel-&gt;find((int)$id);
+        $product = $this->productModel->find((int)$id);
         if (!$product) {
             $_SESSION['error'] = '商品不存在';
             redirect('/admin/products');
             return;
         }
         
-        $categories = $this-&gt;categoryModel-&gt;getAllCategories();
+        $categories = $this->categoryModel->getAllCategories();
         require __DIR__ . '/../../views/admin/product_edit.phtml';
     }
 
@@ -360,14 +358,14 @@ class AdminController
                 return;
             } else {
                 $data = [
-                    'title' =&gt; trim($_POST['title'] ?? ''),
-                    'author' =&gt; trim($_POST['author'] ?? ''),
-                    'category_id' =&gt; (int)($_POST['category_id'] ?? 0),
-                    'price' =&gt; (float)($_POST['price'] ?? 0),
-                    'description' =&gt; trim($_POST['description'] ?? '')
+                    'title' => trim($_POST['title'] ?? ''),
+                    'author' => trim($_POST['author'] ?? ''),
+                    'category_id' => (int)($_POST['category_id'] ?? 0),
+                    'price' => (float)($_POST['price'] ?? 0),
+                    'description' => trim($_POST['description'] ?? '')
                 ];
                 
-                if ($this-&gt;productModel-&gt;update($productId, $data)) {
+                if ($this->productModel->update($productId, $data)) {
                     $_SESSION['success'] = '商品信息修改成功！';
                     redirect('/admin/products');
                     return;

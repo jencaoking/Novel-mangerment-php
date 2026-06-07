@@ -5,11 +5,13 @@ use Core\Middleware\MiddlewareInterface;
 
 class AuthMiddleware implements MiddlewareInterface {
     public function handle() {
-        // 使用你 includes/auth.php 里的原生函数
         if (!isLoggedIn()) {
-            $_SESSION['redirect_url'] = $_SERVER['REQUEST_URI'];
+            $uri = $_SERVER['REQUEST_URI'];
+            if (strpos($uri, '/') === 0 && strpos($uri, '//') !== 0) {
+                $_SESSION['redirect_url'] = $uri;
+            }
             redirect('/login');
-            exit(); // 关键：拦截不合格请求，终止框架继续向下执行
+            exit();
         }
     }
 }

@@ -15,11 +15,11 @@ class Container {
         try {
             $reflector = new ReflectionClass($className);
         } catch (\ReflectionException $e) {
-            throw new Exception("类不存在: [$className]", 500, $e);
+            throw new \Exception("类不存在: [$className]", 500, $e);
         }
 
         if (!$reflector->isInstantiable()) {
-            throw new Exception("类无法被实例化: [$className]");
+            throw new \Exception("类无法被实例化: [$className]");
         }
 
         $constructor = $reflector->getConstructor();
@@ -48,7 +48,7 @@ class Container {
                 if ($parameter->isDefaultValueAvailable()) {
                     $dependencies[] = $parameter->getDefaultValue();
                 } else {
-                    throw new Exception("无法解析类的依赖参数: {$parameter->getName()}");
+                    throw new \Exception("无法解析类的依赖参数: {$parameter->getName()}");
                 }
             } else {
                 $dependencies[] = $this->get($type->getName());

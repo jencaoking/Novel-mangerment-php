@@ -6,7 +6,7 @@
         "php": ">=7.4",
         "vlucas/phpdotenv": "^5.5",
         "resend/resend-php": "*",
-        "sentry/sentry": "^4.0"
+        "sentry/sentry": "^4.27"
     },
     "autoload": {
         "psr-4": {

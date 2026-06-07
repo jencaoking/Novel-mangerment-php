@@ -1,4 +1,5 @@
-<?php
+
+&lt;?php
 namespace App\Controllers;
 
 use App\Models\OrderModel;
@@ -13,9 +14,9 @@ class PaymentController
     public function __construct()
     {
         require_once __DIR__ . '/../../includes/AlipaySDK.php';
-        $this->orderModel = new OrderModel();
-        $this->productModel = new ProductModel();
-        $this->alipaySDK = new \AlipaySDK();
+        $this-&gt;orderModel = new OrderModel();
+        $this-&gt;productModel = new ProductModel();
+        $this-&gt;alipaySDK = new \AlipaySDK();
     }
 
     /**
@@ -28,13 +29,13 @@ class PaymentController
         }
 
         $orderId = (int)$orderId;
-        if ($orderId <= 0) {
+        if ($orderId &lt;= 0) {
             $_SESSION['error'] = '无效的订单号';
             redirect('/user/orders');
         }
 
         // 获取订单信息
-        $order = $this->orderModel->find($orderId);
+        $order = $this-&gt;orderModel-&gt;find($orderId);
         
         if (!$order) {
             $_SESSION['error'] = '订单不存在';
@@ -54,7 +55,7 @@ class PaymentController
         }
 
         // 获取商品信息
-        $product = $this->productModel->find($order['product_id']);
+        $product = $this-&gt;productModel-&gt;find($order['product_id']);
         if (!$product) {
             $_SESSION['error'] = '商品不存在';
             redirect('/user/orders');
@@ -62,7 +63,7 @@ class PaymentController
 
         // 生成支付宝支付链接(PC端)
         try {
-            $payUrl = $this->alipaySDK->createPagePayUrl(
+            $payUrl = $this-&gt;alipaySDK-&gt;createPagePayUrl(
                 $order['order_no'],
                 $order['price'],
                 $product['title'],
@@ -74,7 +75,7 @@ class PaymentController
             exit;
 
         } catch (\Exception $e) {
-            error_log('支付宝支付跳转失败: ' . $e->getMessage());
+            error_log('支付宝支付跳转失败: ' . $e-&gt;getMessage());
             $_SESSION['error'] = '支付跳转失败，请稍后再试';
             redirect('/user/orders');
         }
@@ -92,7 +93,7 @@ class PaymentController
         error_log('支付宝异步通知收到数据: ' . json_encode($data, JSON_UNESCAPED_UNICODE));
 
         // 验证签名
-        if (!$this->alipaySDK->verifyNotify($data)) {
+        if (!$this-&gt;alipaySDK-&gt;verifyNotify($data)) {
             error_log('支付宝异步通知签名验证失败');
             echo 'fail';
             return;
@@ -105,7 +106,7 @@ class PaymentController
         $totalAmount = $data['total_amount'] ?? '0';
 
         // 只处理支付成功的通知
-        if ($tradeStatus !== 'TRADE_SUCCESS' && $tradeStatus !== 'TRADE_FINISHED') {
+        if ($tradeStatus !== 'TRADE_SUCCESS' &amp;&amp; $tradeStatus !== 'TRADE_FINISHED') {
             echo 'success';
             return;
         }
@@ -115,10 +116,10 @@ class PaymentController
         
         if ($isBatchOrder) {
             // 批次订单处理逻辑
-            $this->handleBatchOrderNotify($outTradeNo, $tradeNo, $totalAmount);
+            $this-&gt;handleBatchOrderNotify($outTradeNo, $tradeNo, $totalAmount);
         } else {
             // 单个订单处理逻辑
-            $this->handleSingleOrderNotify($outTradeNo, $tradeNo, $totalAmount);
+            $this-&gt;handleSingleOrderNotify($outTradeNo, $tradeNo, $totalAmount);
         }
     }
 
@@ -128,7 +129,7 @@ class PaymentController
     private function handleSingleOrderNotify($outTradeNo, $tradeNo, $totalAmount)
     {
         // 查找订单
-        $order = $this->orderModel->findByOrderNo($outTradeNo);
+        $order = $this-&gt;orderModel-&gt;findByOrderNo($outTradeNo);
         if (!$order) {
             error_log('支付宝异步通知：订单不存在 - ' . $outTradeNo);
             echo 'fail';
@@ -152,16 +153,16 @@ class PaymentController
         // 更新订单状态
         try {
             $payTime = date('Y-m-d H:i:s');
-            $this->orderModel->updateOrderPaid($order['id'], $tradeNo, $payTime);
+            $this-&gt;orderModel-&gt;updateOrderPaid($order['id'], $tradeNo, $payTime);
             
             // 更新商品销量
-            $this->productModel->increaseSales($order['product_id']);
+            $this-&gt;productModel-&gt;increaseSales($order['product_id']);
             
             error_log('支付宝异步通知：订单支付成功 - ' . $outTradeNo);
             echo 'success';
             
         } catch (\Exception $e) {
-            error_log('支付宝异步通知：更新订单失败 - ' . $e->getMessage());
+            error_log('支付宝异步通知：更新订单失败 - ' . $e-&gt;getMessage());
             echo 'fail';
         }
     }
@@ -176,9 +177,9 @@ class PaymentController
         try {
             // 获取批次下的所有订单
             $sql = "SELECT id, product_id, price FROM orders WHERE trade_no = ? AND status = 'pending'";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([$batchTradeNo]);
-            $orders = $stmt->fetchAll();
+            $stmt = $db-&gt;prepare($sql);
+            $stmt-&gt;execute([$batchTradeNo]);
+            $orders = $stmt-&gt;fetchAll();
             
             if (empty($orders)) {
                 error_log('支付宝异步通知：批次订单不存在或已全部处理 - ' . $batchTradeNo);
@@ -195,29 +196,29 @@ class PaymentController
             }
             
             // 事务更新所有订单状态
-            $db->beginTransaction();
+            $db-&gt;beginTransaction();
             
-            $updateStmt = $db->prepare("UPDATE orders SET status = 'paid', pay_time = ?, trade_no = CONCAT(trade_no, '_PAID') WHERE id = ?");
+            $updateStmt = $db-&gt;prepare("UPDATE orders SET status = 'paid', pay_time = ?, trade_no = ? WHERE id = ?");
             $payTime = date('Y-m-d H:i:s');
             
             foreach ($orders as $order) {
-                $updateStmt->execute([$payTime, $order['id']]);
+                $updateStmt-&gt;execute([$payTime, $tradeNo, $order['id']]);
                 
                 // 更新商品销量
-                $this->productModel->increaseSales($order['product_id']);
+                $this-&gt;productModel-&gt;increaseSales($order['product_id']);
             }
             
-            $db->commit();
+            $db-&gt;commit();
             
             error_log('支付宝异步通知：批次订单支付成功 - ' . $batchTradeNo . '，共' . count($orders) . '件商品');
             echo 'success';
             
         } catch (\Exception $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
+            if ($db-&gt;inTransaction()) {
+                $db-&gt;rollBack();
             }
             
-            error_log('支付宝异步通知：批次订单更新失败 - ' . $e->getMessage());
+            error_log('支付宝异步通知：批次订单更新失败 - ' . $e-&gt;getMessage());
             echo 'fail';
         }
     }
@@ -231,7 +232,7 @@ class PaymentController
         $data = $_GET;
 
         // 验证签名
-        if (!$this->alipaySDK->verifyReturn($data)) {
+        if (!$this-&gt;alipaySDK-&gt;verifyReturn($data)) {
             $_SESSION['error'] = '支付验证失败';
             redirect('/user/orders');
         }
@@ -240,7 +241,7 @@ class PaymentController
         $tradeNo = $data['trade_no'] ?? '';
 
         // 查找订单
-        $order = $this->orderModel->findByOrderNo($outTradeNo);
+        $order = $this-&gt;orderModel-&gt;findByOrderNo($outTradeNo);
         
         if (!$order) {
             $_SESSION['error'] = '订单不存在';
@@ -263,22 +264,22 @@ class PaymentController
     public function query($orderId)
     {
         if (!isLoggedIn()) {
-            json_response(['success' => false, 'message' => '请先登录']);
+            json_response(['success' =&gt; false, 'message' =&gt; '请先登录']);
         }
 
         $orderId = (int)$orderId;
-        $order = $this->orderModel->find($orderId);
+        $order = $this-&gt;orderModel-&gt;find($orderId);
 
         if (!$order || $order['user_id'] != getCurrentUserId()) {
-            json_response(['success' => false, 'message' => '订单不存在']);
+            json_response(['success' =&gt; false, 'message' =&gt; '订单不存在']);
         }
 
         json_response([
-            'success' => true,
-            'order_no' => $order['order_no'],
-            'status' => $order['status'],
-            'price' => $order['price'],
-            'pay_time' => $order['pay_time']
+            'success' =&gt; true,
+            'order_no' =&gt; $order['order_no'],
+            'status' =&gt; $order['status'],
+            'price' =&gt; $order['price'],
+            'pay_time' =&gt; $order['pay_time']
         ]);
     }
 
@@ -288,13 +289,13 @@ class PaymentController
     public function queryBatchStatus()
     {
         if (!isLoggedIn()) {
-            json_response(['success' => false, 'message' => '请先登录'], 401);
+            json_response(['success' =&gt; false, 'message' =&gt; '请先登录'], 401);
         }
 
         $batchTradeNo = isset($_GET['batch_trade_no']) ? $_GET['batch_trade_no'] : '';
         
         if (empty($batchTradeNo) || strpos($batchTradeNo, 'BATCH_') !== 0) {
-            json_response(['success' => false, 'message' => '无效的批次号']);
+            json_response(['success' =&gt; false, 'message' =&gt; '无效的批次号']);
         }
 
         try {
@@ -302,12 +303,12 @@ class PaymentController
 
             // 查询该批次下所有订单的状态
             $sql = "SELECT id, status, pay_time FROM orders WHERE trade_no = ? AND user_id = ?";
-            $stmt = $db->prepare($sql);
-            $stmt->execute([$batchTradeNo, getCurrentUserId()]);
-            $orders = $stmt->fetchAll();
+            $stmt = $db-&gt;prepare($sql);
+            $stmt-&gt;execute([$batchTradeNo, getCurrentUserId()]);
+            $orders = $stmt-&gt;fetchAll();
             
             if (empty($orders)) {
-                json_response(['success' => false, 'message' => '批次订单不存在']);
+                json_response(['success' =&gt; false, 'message' =&gt; '批次订单不存在']);
             }
             
             // 检查是否所有订单都已支付
@@ -325,33 +326,33 @@ class PaymentController
             // 返回批次支付状态
             if ($allPaid) {
                 json_response([
-                    'success' => true,
-                    'status' => 'paid',
-                    'batch_trade_no' => $batchTradeNo,
-                    'order_count' => count($orders),
-                    'message' => '支付成功'
+                    'success' =&gt; true,
+                    'status' =&gt; 'paid',
+                    'batch_trade_no' =&gt; $batchTradeNo,
+                    'order_count' =&gt; count($orders),
+                    'message' =&gt; '支付成功'
                 ]);
             } elseif ($anyPaid) {
                 json_response([
-                    'success' => true,
-                    'status' => 'partial_paid',
-                    'batch_trade_no' => $batchTradeNo,
-                    'order_count' => count($orders),
-                    'message' => '部分订单已支付'
+                    'success' =&gt; true,
+                    'status' =&gt; 'partial_paid',
+                    'batch_trade_no' =&gt; $batchTradeNo,
+                    'order_count' =&gt; count($orders),
+                    'message' =&gt; '部分订单已支付'
                 ]);
             } else {
                 json_response([
-                    'success' => true,
-                    'status' => 'pending',
-                    'batch_trade_no' => $batchTradeNo,
-                    'order_count' => count($orders),
-                    'message' => '等待支付'
+                    'success' =&gt; true,
+                    'status' =&gt; 'pending',
+                    'batch_trade_no' =&gt; $batchTradeNo,
+                    'order_count' =&gt; count($orders),
+                    'message' =&gt; '等待支付'
                 ]);
             }
             
         } catch (\Exception $e) {
-            error_log('查询批次订单状态失败: ' . $e->getMessage());
-            json_response(['success' => false, 'message' => '查询失败，请稍后再试']);
+            error_log('查询批次订单状态失败: ' . $e-&gt;getMessage());
+            json_response(['success' =&gt; false, 'message' =&gt; '查询失败，请稍后再试']);
         }
     }
 
@@ -361,7 +362,7 @@ class PaymentController
     public function checkoutCart()
     {
         if (!isLoggedIn()) {
-            json_response(['success' => false, 'message' => '请先登录'], 401);
+            json_response(['success' =&gt; false, 'message' =&gt; '请先登录'], 401);
         }
 
         $userId = getCurrentUserId();
@@ -369,38 +370,38 @@ class PaymentController
         // 1. 从 POST 获取选中的商品 ID 数组
         $productIds = isset($_POST['product_ids']) ? $_POST['product_ids'] : [];
         
-        if (empty($productIds)) {
-            json_response(['success' => false, 'message' => '请选择要结算的商品']);
+        if (!is_array($productIds) || empty($productIds)) {
+            json_response(['success' =&gt; false, 'message' =&gt; '请选择要结算的商品']);
         }
         
         // 验证并过滤商品ID
         $productIds = array_map('intval', $productIds);
         $productIds = array_filter($productIds, function($id) {
-            return $id > 0;
+            return $id &gt; 0;
         });
         
         if (empty($productIds)) {
-            json_response(['success' => false, 'message' => '无效的商品ID']);
+            json_response(['success' =&gt; false, 'message' =&gt; '无效的商品ID']);
         }
         
         try {
             // 2. 获取购物车中选中的商品信息
             $db = getDB();
-            
+
             // 构建 IN 查询的参数占位符
             $placeholders = implode(',', array_fill(0, count($productIds), '?'));
             $sql = "SELECT p.id, p.price, p.title, p.type 
                     FROM cart c 
                     LEFT JOIN products p ON c.product_id = p.id 
-                    WHERE c.user_id = ? AND c.product_id IN ($placeholders)";
+                    WHERE c.user_id = ? AND c.product_id IN (" . $placeholders . ")";
             
             $params = array_merge([$userId], $productIds);
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            $cartItems = $stmt->fetchAll();
+            $stmt = $db-&gt;prepare($sql);
+            $stmt-&gt;execute($params);
+            $cartItems = $stmt-&gt;fetchAll();
             
             if (empty($cartItems)) {
-                json_response(['success' => false, 'message' => '购物车中没有选中的商品']);
+                json_response(['success' =&gt; false, 'message' =&gt; '购物车中没有选中的商品']);
             }
             
             // 3. 计算总价并生成批次流水号
@@ -409,16 +410,16 @@ class PaymentController
             $orderTitles = '合并订单等' . count($cartItems) . '件商品';
             
             // 4. 事务处理：插入多条订单记录 + 清空选中购物车商品
-            $db->beginTransaction();
+            $db-&gt;beginTransaction();
             
             // 修复：order_no 在 orders 表中为 UNIQUE NOT NULL，合并支付时必须为每条订单单独生成
-            $orderStmt = $db->prepare(
+            $orderStmt = $db-&gt;prepare(
                 "INSERT INTO orders (order_no, user_id, product_id, price, trade_no, status) 
                  VALUES (?, ?, ?, ?, ?, 'pending')"
             );
             
             foreach ($cartItems as $item) {
-                $orderStmt->execute([
+                $orderStmt-&gt;execute([
                     generateOrderNo(),
                     $userId, 
                     $item['id'], 
@@ -429,15 +430,15 @@ class PaymentController
             
             // 清空选中的购物车商品
             $deletePlaceholders = implode(',', array_fill(0, count($productIds), '?'));
-            $deleteSql = "DELETE FROM cart WHERE user_id = ? AND product_id IN ($deletePlaceholders)";
+            $deleteSql = "DELETE FROM cart WHERE user_id = ? AND product_id IN (" . $deletePlaceholders . ")";
             $deleteParams = array_merge([$userId], $productIds);
-            $db->prepare($deleteSql)->execute($deleteParams);
+            $db-&gt;prepare($deleteSql)-&gt;execute($deleteParams);
             
-            $db->commit();
+            $db-&gt;commit();
             
             // 5. 生成支付宝支付链接
             // 使用批次号作为商户订单号，支付宝会原样返回
-            $payUrl = $this->alipaySDK->createPagePayUrl(
+            $payUrl = $this-&gt;alipaySDK-&gt;createPagePayUrl(
                 $batchTradeNo,
                 $totalAmount,
                 $orderTitles,
@@ -446,20 +447,20 @@ class PaymentController
             
             // 6. 返回 JSON 响应
             json_response([
-                'success' => true,
-                'batch_trade_no' => $batchTradeNo,
-                'total_amount' => sprintf('%.2f', $totalAmount),
-                'pay_url' => $payUrl,
-                'item_count' => count($cartItems)
+                'success' =&gt; true,
+                'batch_trade_no' =&gt; $batchTradeNo,
+                'total_amount' =&gt; sprintf('%.2f', $totalAmount),
+                'pay_url' =&gt; $payUrl,
+                'item_count' =&gt; count($cartItems)
             ]);
             
         } catch (\Exception $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
+            if ($db-&gt;inTransaction()) {
+                $db-&gt;rollBack();
             }
             
-            error_log('购物车结算失败: ' . $e->getMessage());
-            json_response(['success' => false, 'message' => '结算失败，请稍后再试']);
+            error_log('购物车结算失败: ' . $e-&gt;getMessage());
+            json_response(['success' =&gt; false, 'message' =&gt; '结算失败，请稍后再试']);
         }
     }
 }

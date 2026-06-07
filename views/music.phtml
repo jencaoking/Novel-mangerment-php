@@ -11,8 +11,8 @@
         </div>
 
         <!-- 搜索和筛选区 -->
-        <div class="filter-toolbar">
-            <form method="GET" class="search-form">
+        <form method="GET" class="filter-toolbar">
+            <div class="search-form">
                 <div class="search-input-wrapper">
                     <i class="bi bi-search"></i>
                     <input type="text" name="search" placeholder="搜索歌曲名称或歌手..." 
@@ -21,7 +21,7 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-search"></i> 搜索
                 </button>
-            </form>
+            </div>
 
             <div class="filter-options">
                 <div class="filter-select-wrapper">
@@ -46,7 +46,7 @@
                     </select>
                 </div>
             </div>
-        </div>
+        </form>
 
         <!-- 产品网格 -->
         <?php if (empty($music)): ?>

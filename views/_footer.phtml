@@ -1,29 +1,42 @@
-<footer class="bg-dark text-white py-5 mt-5">
+<footer class="footer">
     <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <h4 class="fw-bold mb-3">BookMusic Mall</h4>
-                <p class="text-muted">海量正版数字内容，小说与音乐的完美结合</p>
+        <div class="footer-grid">
+            <div class="footer-section">
+                <h4 class="mb-3">
+                    <i class="bi bi-music-note-beamed me-2"></i>
+                    BookMusic Mall
+                </h4>
+                <p class="text-gray-400 mb-0">
+                    海量正版数字内容，小说与音乐的完美结合。让阅读与聆听成为生活中最美好的享受。
+                </p>
             </div>
-            <div class="col-md-4">
-                <h5 class="fw-bold mb-3">快速链接</h5>
-                <ul class="list-unstyled">
-                    <li><a href="/" class="text-muted text-decoration-none">首页</a></li>
-                    <li><a href="/novels" class="text-muted text-decoration-none">小说</a></li>
-                    <li><a href="/music" class="text-muted text-decoration-none">音乐</a></li>
+            <div class="footer-section">
+                <h4>快速链接</h4>
+                <ul class="footer-links">
+                    <li><a href="/"><i class="bi bi-chevron-right me-2"></i> 首页</a></li>
+                    <li><a href="/novels"><i class="bi bi-chevron-right me-2"></i> 小说</a></li>
+                    <li><a href="/music"><i class="bi bi-chevron-right me-2"></i> 音乐</a></li>
                 </ul>
             </div>
-            <div class="col-md-4">
-                <h5 class="fw-bold mb-3">用户服务</h5>
-                <ul class="list-unstyled">
-                    <li><a href="/login" class="text-muted text-decoration-none">登录</a></li>
-                    <li><a href="/register" class="text-muted text-decoration-none">注册</a></li>
-                    <li><a href="/user" class="text-muted text-decoration-none">个人中心</a></li>
+            <div class="footer-section">
+                <h4>用户服务</h4>
+                <ul class="footer-links">
+                    <li><a href="/login"><i class="bi bi-chevron-right me-2"></i> 登录</a></li>
+                    <li><a href="/register"><i class="bi bi-chevron-right me-2"></i> 注册</a></li>
+                    <li><a href="/user"><i class="bi bi-chevron-right me-2"></i> 个人中心</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>联系我们</h4>
+                <ul class="footer-links">
+                    <li><i class="bi bi-envelope me-2"></i> support@bookmusic.com</li>
+                    <li><i class="bi bi-telephone me-2"></i> 400-888-8888</li>
+                    <li><i class="bi bi-geo-alt me-2"></i> 北京市朝阳区</li>
                 </ul>
             </div>
         </div>
-        <div class="border-top border-gray-700 mt-4 pt-4 text-center text-muted">
-            <p>&copy; <?= date('Y') ?> BookMusic Mall. All rights reserved.</p>
+        <div class="footer-bottom">
+            <p class="mb-0">&copy; <?= date('Y') ?> BookMusic Mall. All rights reserved.</p>
         </div>
     </div>
 </footer>

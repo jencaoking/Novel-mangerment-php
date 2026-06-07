@@ -1,13 +1,15 @@
 <?php
+namespace App\Includes;
+
+use WeChatPay\Builder;
+use WeChatPay\Crypto\Rsa;
+use WeChatPay\Crypto\AesGcm;
+use WeChatPay\Util\PemUtil;
+
 /**
  * BookMusic Mall - 微信支付SDK封装类
  * 基于官方 wechatpay/wechatpay V3 SDK
  */
-
-use WeChatPay\Builder;
-use WeChatPay\Crypto\Rsa;
-use WeChatPay\Util\PemUtil;
-
 class WechatPaySDK
 {
     private $instance;
@@ -29,7 +31,7 @@ class WechatPaySDK
         $this->appId = WECHAT_APP_ID;
         $this->notifyUrl = WECHAT_NOTIFY_URL;
 
-        // 构造商户私钥
+        // 检查证书文件是否存在
         if (!file_exists(WECHAT_PRIVATE_KEY_PATH)) {
             throw new \Exception('微信支付商户私钥文件不存在: ' . WECHAT_PRIVATE_KEY_PATH);
         }
@@ -37,6 +39,7 @@ class WechatPaySDK
             throw new \Exception('微信支付平台证书文件不存在: ' . WECHAT_CERT_PATH);
         }
 
+        // 构造商户私钥
         $merchantPrivateKeyInstance = Rsa::from(
             file_get_contents(WECHAT_PRIVATE_KEY_PATH),
             Rsa::KEY_TYPE_PRIVATE
@@ -138,62 +141,62 @@ class WechatPaySDK
     }
 
     /**
-     * 验证微信支付异步通知
-     * @param array $headers 通知头信息
-     * @param string $body 通知体
-     * @return bool 验证结果
+     * 验证并解密微信支付异步回调数据
+     * @return array|false 解密后的订单数据，失败返回 false
      */
-    public function verifyNotify($headers, $body)
+    public function verifyAndDecryptNotify()
     {
-        // 验证签名
-        $signature = $headers['Wechatpay-Signature'] ?? '';
-        $timestamp = $headers['Wechatpay-Timestamp'] ?? '';
-        $nonce = $headers['Wechatpay-Nonce'] ?? '';
-        $serial = $headers['Wechatpay-Serial'] ?? '';
+        try {
+            // 1. 获取微信回调请求头和请求体
+            $signature = $_SERVER['HTTP_WECHATPAY_SIGNATURE'] ?? '';
+            $timestamp = $_SERVER['HTTP_WECHATPAY_TIMESTAMP'] ?? '';
+            $nonce     = $_SERVER['HTTP_WECHATPAY_NONCE'] ?? '';
+            $serial    = $_SERVER['HTTP_WECHATPAY_SERIAL'] ?? '';
+            $body      = file_get_contents('php://input');
 
-        if (!$signature || !$timestamp || !$nonce) {
+            if (empty($signature) || empty($timestamp) || empty($nonce) || empty($body) || empty($serial)) {
+                throw new \Exception('缺失微信回调验证参数');
+            }
+
+            // 检查时间戳是否在 5 分钟内，防止重放攻击
+            if (abs(time() - intval($timestamp)) > 300) {
+                throw new \Exception('微信回调时间戳异常');
+            }
+
+            // 2. 构造验签字符串
+            $message = "{$timestamp}\n{$nonce}\n{$body}\n";
+
+            // 3. 加载微信支付平台公钥（证书）用于验签
+            $platformPublicKeyInstance = PemUtil::loadCertificate(WECHAT_CERT_PATH);
+
+            // 4. 验证签名
+            $isVerified = Rsa::verify($message, $signature, $platformPublicKeyInstance);
+            if (!$isVerified) {
+                throw new \Exception('微信回调签名验证失败');
+            }
+
+            // 5. 解析请求体，准备解密 resource 数据
+            $data = json_decode($body, true);
+            if (!isset($data['resource'])) {
+                throw new \Exception('回调数据中缺失 resource 字段');
+            }
+
+            $resource = $data['resource'];
+            
+            // 6. 使用 API v3 密钥进行 AES-256-GCM 解密
+            $decryptedStr = AesGcm::decrypt(
+                $resource['ciphertext'],
+                WECHAT_API_V3_KEY,
+                $resource['nonce'],
+                $resource['associated_data'] ?? ''
+            );
+
+            return json_decode($decryptedStr, true);
+
+        } catch (\Exception $e) {
+            error_log('微信支付回调处理异常: ' . $e->getMessage());
             return false;
         }
-
-        $message = $timestamp . "\n" . $nonce . "\n" . $body . "\n";
-        $cert = PemUtil::loadCertificate(WECHAT_CERT_PATH);
-
-        $result = openssl_verify(
-            $message,
-            base64_decode($signature),
-            $cert,
-            OPENSSL_ALGO_SHA256
-        );
-
-        return $result === 1;
-    }
-
-    /**
-     * 解密通知数据
-     * @param string $ciphertext 密文
-     * @param string $associatedData 附加数据
-     * @param string $nonce 随机数
-     * @return array 解密后的数据
-     */
-    public function decryptNotifyData($ciphertext, $associatedData, $nonce)
-    {
-        $ciphertextBinary = base64_decode($ciphertext);
-        $key = hash('sha256', WECHAT_API_V3_KEY, true);
-
-        $authTag = substr($ciphertextBinary, -16);
-        $ciphertextBody = substr($ciphertextBinary, 0, -16);
-
-        $decrypted = openssl_decrypt(
-            $ciphertextBody,
-            'aes-256-gcm',
-            $key,
-            OPENSSL_RAW_DATA,
-            $nonce,
-            $authTag,
-            $associatedData
-        );
-
-        return json_decode($decrypted, true);
     }
 
     /**
@@ -203,12 +206,11 @@ class WechatPaySDK
      */
     public function queryOrder($orderNo)
     {
-        $resp = $this->instance->chain('v3/pay/transactions/out-trade-no/' . $orderNo)
-            ->get([
-                'query' => [
-                    'mchid' => $this->mchId
-                ]
-            ]);
+        $resp = $this->instance->chain('v3/pay/transactions/out-trade-no/' . $orderNo)->get([
+            'query' => [
+                'mchid' => $this->mchId
+            ]
+        ]);
 
         return json_decode($resp->getBody(), true);
     }
@@ -221,12 +223,11 @@ class WechatPaySDK
     public function closeOrder($orderNo)
     {
         try {
-            $resp = $this->instance->chain('v3/pay/transactions/out-trade-no/' . $orderNo . '/close')
-                ->post([
-                    'json' => [
-                        'mchid' => $this->mchId
-                    ]
-                ]);
+            $resp = $this->instance->chain('v3/pay/transactions/out-trade-no/' . $orderNo . '/close')->post([
+                'json' => [
+                    'mchid' => $this->mchId
+                ]
+            ]);
 
             return $resp->getStatusCode() === 204;
         } catch (\Exception $e) {
@@ -236,7 +237,7 @@ class WechatPaySDK
     }
 
     /**
-     * 验证回调签名参数
+     * 对参数进行签名（用于生成支付参数）
      * @param array $params 待签名的参数
      * @return string 签名字符串
      */
@@ -246,18 +247,16 @@ class WechatPaySDK
         $signStr = '';
         foreach ($params as $key => $value) {
             if ($value !== '' && $value !== null) {
-                $signStr .= $key . '=' . $value . '&';
+                $signStr .= $key . '=' . $value . "\n";
             }
         }
-        $signStr = rtrim($signStr, '&');
 
-        $privateKey = file_get_contents(WECHAT_PRIVATE_KEY_PATH);
-        $keyInstance = Rsa::from($privateKey, Rsa::KEY_TYPE_PRIVATE);
+        $merchantPrivateKeyInstance = Rsa::from(
+            file_get_contents(WECHAT_PRIVATE_KEY_PATH),
+            Rsa::KEY_TYPE_PRIVATE
+        );
 
-        $signature = '';
-        openssl_sign($signStr, $signature, $keyInstance, OPENSSL_ALGO_SHA256);
-
-        return base64_encode($signature);
+        return Rsa::sign($signStr, $merchantPrivateKeyInstance);
     }
 
     /**

@@ -15,7 +15,7 @@ class PaymentController
         OrderModel $orderModel,
         ProductModel $productModel,
         \AlipaySDK $alipaySDK,
-        \WechatPaySDK $wechatPaySDK
+        \App\Includes\WechatPaySDK $wechatPaySDK
     ) {
         $this->orderModel = $orderModel;
         $this->productModel = $productModel;
@@ -189,51 +189,33 @@ class PaymentController
      */
     public function wechatNotify()
     {
-        $headers = getallheaders();
-        $body = file_get_contents('php://input');
+        error_log('微信支付异步通知收到请求');
 
-        error_log('微信支付异步通知收到数据: ' . $body);
+        // 使用新的验证和解密方法
+        $orderData = $this->wechatPaySDK->verifyAndDecryptNotify();
 
-        // 验证签名
-        if (!$this->wechatPaySDK->verifyNotify($headers, $body)) {
-            error_log('微信支付异步通知签名验证失败');
+        if (!$orderData) {
+            error_log('微信支付异步通知验证或解密失败');
             echo 'FAIL';
             return;
         }
 
-        $notifyData = json_decode($body, true);
+        $outTradeNo = $orderData['out_trade_no'] ?? '';
+        $transactionId = $orderData['transaction_id'] ?? '';
+        $tradeStatus = $orderData['trade_state'] ?? '';
+        $totalAmount = isset($orderData['amount']['payer_total']) ? $orderData['amount']['payer_total'] / 100 : 0;
 
-        if (!$notifyData || !isset($notifyData['event_type'])) {
-            echo 'FAIL';
-            return;
-        }
+        if ($tradeStatus === 'SUCCESS') {
+            error_log('微信支付异步通知：支付成功 - 订单号:' . $outTradeNo);
+            $isBatchOrder = strpos($outTradeNo, 'BATCH_') === 0;
 
-        // 处理支付成功通知
-        if ($notifyData['event_type'] === 'TRANSACTION.SUCCESS') {
-            $resource = $notifyData['resource'] ?? [];
-
-            $ciphertext = $resource['ciphertext'] ?? '';
-            $associatedData = $resource['associated_data'] ?? '';
-            $nonce = $resource['nonce'] ?? '';
-
-            if ($ciphertext && $nonce) {
-                $orderData = $this->wechatPaySDK->decryptNotifyData($ciphertext, $associatedData, $nonce);
-
-                $outTradeNo = $orderData['out_trade_no'] ?? '';
-                $transactionId = $orderData['transaction_id'] ?? '';
-                $tradeStatus = $orderData['trade_state'] ?? '';
-                $totalAmount = isset($orderData['amount']['payer_total']) ? $orderData['amount']['payer_total'] / 100 : 0;
-
-                if ($tradeStatus === 'SUCCESS') {
-                    $isBatchOrder = strpos($outTradeNo, 'BATCH_') === 0;
-
-                    if ($isBatchOrder) {
-                        $this->handleBatchOrderNotify($outTradeNo, $transactionId, $totalAmount, 'wechat');
-                    } else {
-                        $this->handleSingleOrderNotify($outTradeNo, $transactionId, $totalAmount, 'wechat');
-                    }
-                }
+            if ($isBatchOrder) {
+                $this->handleBatchOrderNotify($outTradeNo, $transactionId, $totalAmount, 'wechat');
+            } else {
+                $this->handleSingleOrderNotify($outTradeNo, $transactionId, $totalAmount, 'wechat');
             }
+        } else {
+            error_log('微信支付异步通知：交易状态非成功 - ' . $tradeStatus);
         }
 
         echo 'SUCCESS';
@@ -406,8 +388,8 @@ class PaymentController
         $batchTradeNo = isset($_GET['batch_trade_no']) ? $_GET['batch_trade_no'] : '';
 
         if (empty($batchTradeNo) || strpos($batchTradeNo, 'BATCH_') !== 0) {
-                jsonResponse(['success' => false, 'message' => '无效的批次号']);
-            }
+            json_response(['success' => false, 'message' => '无效的批次号']);
+        }
 
         try {
             $db = getDB();
@@ -418,7 +400,7 @@ class PaymentController
             $orders = $stmt->fetchAll();
 
             if (empty($orders)) {
-                jsonResponse(['success' => false, 'message' => '批次订单不存在']);
+                json_response(['success' => false, 'message' => '批次订单不存在']);
             }
 
             $allPaid = true;

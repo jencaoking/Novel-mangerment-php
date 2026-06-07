@@ -46,7 +46,7 @@ class Router {
                 foreach ($middlewares as $mwName) {
                     $mwClass = "\\App\\Middleware\\" . $mwName;
                     if (class_exists($mwClass)) {
-                        $middleware = new $mwClass();
+                        $middleware = $this->container->get($mwClass);
                         if (!$middleware->handle()) {
                             // 中间件验证失败，由中间件内部处理响应，直接终止
                             return;

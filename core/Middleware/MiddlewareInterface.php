@@ -5,8 +5,7 @@ namespace Core\Middleware;
 interface MiddlewareInterface {
     /**
      * 处理请求
-     * 如果验证失败，直接在内部 redirect() 并 exit()
-     * 如果验证成功，什么都不用做，直接放行
+     * @return bool true 表示验证通过放行，false 表示验证失败（由实现类处理响应）
      */
-    public function handle();
+    public function handle(): bool;
 }

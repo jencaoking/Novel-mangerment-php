@@ -10,12 +10,16 @@ class DownloadModel extends BaseModel {
      * 记录下载日志
      */
     public function logDownload($userId, $productId, $orderId) {
+        $ip = function_exists('getClientIP') ? getClientIP() : $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = function_exists('getUserAgent') ? getUserAgent() : ($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $userAgent = substr($userAgent, 0, 255);
+        
         $data = [
             'user_id' => $userId,
             'product_id' => $productId,
             'order_id' => $orderId,
-            'ip' => getClientIP(),
-            'user_agent' => getUserAgent()
+            'ip' => $ip,
+            'user_agent' => $userAgent
         ];
         return $this->create($data);
     }

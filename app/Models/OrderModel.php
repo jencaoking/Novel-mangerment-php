@@ -7,7 +7,7 @@ class OrderModel extends BaseModel {
     protected $fillable = ['order_no', 'user_id', 'product_id', 'price', 'status', 'pay_time', 'cancel_time', 'refund_time', 'refund_reason'];
 
     public function createOrder($userId, $productId, $price) {
-        $orderNo = date('YmdHis') . substr(uniqid(), -6);
+        $orderNo = date('YmdHis') . substr(uniqid('', true), -10);
         $data = [
             'order_no' => $orderNo,
             'user_id' => $userId,
@@ -36,7 +36,7 @@ class OrderModel extends BaseModel {
     public function getUserOrderCount($userId) {
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE user_id = ?";
         $result = $this->fetch($sql, [$userId]);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getUserPurchasedProducts($userId) {
@@ -60,7 +60,7 @@ class OrderModel extends BaseModel {
         } elseif ($status === 'cancelled') {
             $data['cancel_time'] = date('Y-m-d H:i:s');
         } elseif ($status === 'completed') {
-            $data['pay_time'] = date('Y-m-d H:i:s');
+            $data['complete_time'] = date('Y-m-d H:i:s');
         }
         return $this->update($orderId, $data);
     }
@@ -79,7 +79,7 @@ class OrderModel extends BaseModel {
     public function getTotalOrders() {
         $sql = "SELECT COUNT(*) as total FROM {$this->table}";
         $result = $this->fetch($sql);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getStats() {
@@ -155,7 +155,7 @@ class OrderModel extends BaseModel {
         }
 
         $result = $this->fetch($sql, $params);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getUserRecentOrders($userId, $limit = 5) {

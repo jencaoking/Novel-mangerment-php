@@ -16,6 +16,10 @@ class Router {
     }
     public function dispatch($uri, $method) {
         $parsedUri = parse_url($uri, PHP_URL_PATH);
+        if ($parsedUri === false || $parsedUri === null) {
+            $this->sendNotFound();
+            return;
+        }
         $parsedUri = '/' . trim($parsedUri, '/');
         if (!isset($this->routes[$method])) {
             $this->sendNotFound();
@@ -26,10 +30,7 @@ class Router {
             $pattern = '#^' . $pattern . '$#';
             if (preg_match($pattern, $parsedUri, $matches)) {
                 // 过滤出命名捕获组
-                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);
-                
-                // ✅ 新增这一行：使用 array_values 清除字符串键名，变为按位置传参 [0 => '123']
-                $params = array_values($params); 
+                $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY); 
                 
                 $callback = $routeInfo['callback'];
                 $middlewares = $routeInfo['middlewares'];
@@ -41,7 +42,10 @@ class Router {
                     $mwClass = "\\App\\Middleware\\" . $mwName;
                     if (class_exists($mwClass)) {
                         $middleware = new $mwClass();
-                        $middleware->handle(); // 如果不通过，这里会直接 exit()
+                        if (!$middleware->handle()) {
+                            // 中间件验证失败，由中间件内部处理响应，直接终止
+                            return;
+                        }
                     } else {
                         throw new \Exception("中间件 {$mwClass} 不存在");
                     }
@@ -67,7 +71,9 @@ class Router {
                         return;
                     }
 
-                    return call_user_func_array([$controllerInstance, $methodName], $params);
+                    // 使用反射按参数名注入
+                    $resolvedParams = $this->resolveMethodParams($controllerInstance, $methodName, $params);
+                    return call_user_func_array([$controllerInstance, $methodName], $resolvedParams);
                 }
                 if (is_callable($callback)) {
                     return call_user_func_array($callback, $params);
@@ -80,5 +86,28 @@ class Router {
         http_response_code(404);
         echo "<h1>404 Not Found</h1><p>The page you are looking for does not exist.</p>";
         exit;
+    }
+
+    /**
+     * 使用反射按参数名注入参数
+     * @param object $instance Controller 实例
+     * @param string $method 方法名
+     * @param array $namedParams 具名参数数组
+     * @return array 按方法参数顺序排列的参数数组
+     */
+    protected function resolveMethodParams($instance, $method, $namedParams) {
+        $reflection = new \ReflectionMethod($instance, $method);
+        $resolved = [];
+        foreach ($reflection->getParameters() as $param) {
+            $name = $param->getName();
+            if (array_key_exists($name, $namedParams)) {
+                $resolved[] = $namedParams[$name];
+            } elseif ($param->isDefaultValueAvailable()) {
+                $resolved[] = $param->getDefaultValue();
+            } else {
+                throw new \Exception("路由参数 {$name} 未提供且无默认值");
+            }
+        }
+        return $resolved;
     }
 }

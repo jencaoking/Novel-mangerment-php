@@ -22,13 +22,18 @@ class BaseModel {
     public function find($id) {
         $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE {$this->primaryKey} = ?");
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        $row = $stmt->fetch();
+        return $row ? $this->hideFields($row) : false;
     }
 
     public function findBy($column, $value) {
+        if (!$this->validateColumn($column)) {
+            return false;
+        }
         $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE {$column} = ?");
         $stmt->execute([$value]);
-        return $stmt->fetch();
+        $row = $stmt->fetch();
+        return $row ? $this->hideFields($row) : false;
     }
 
     public function findAll($conditions = [], $orderBy = null, $offset = 0, $limit = null) {
@@ -38,6 +43,9 @@ class BaseModel {
         if (!empty($conditions)) {
             $conditionParts = [];
             foreach ($conditions as $column => $value) {
+                if (!$this->validateColumn($column)) {
+                    return [];
+                }
                 $conditionParts[] = "{$column} = ?";
                 $params[] = $value;
             }
@@ -45,6 +53,9 @@ class BaseModel {
         }
 
         if ($orderBy) {
+            if (!$this->validateOrderBy($orderBy)) {
+                return [];
+            }
             $sql .= " ORDER BY {$orderBy}";
         }
 
@@ -54,7 +65,8 @@ class BaseModel {
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $result = $stmt->fetchAll();
+        return array_map([$this, 'hideFields'], $result);
     }
 
     public function count($conditions = []) {
@@ -64,6 +76,9 @@ class BaseModel {
         if (!empty($conditions)) {
             $conditionParts = [];
             foreach ($conditions as $column => $value) {
+                if (!$this->validateColumn($column)) {
+                    return 0;
+                }
                 $conditionParts[] = "{$column} = ?";
                 $params[] = $value;
             }
@@ -73,7 +88,7 @@ class BaseModel {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $result = $stmt->fetch();
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function create(array $data) {
@@ -161,5 +176,31 @@ class BaseModel {
     protected function execute($sql, $params = []) {
         $stmt = $this->query($sql, $params);
         return $stmt->rowCount();
+    }
+
+    protected function validateColumn($column) {
+        if (!is_string($column) || empty($column)) {
+            return false;
+        }
+        return preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column) === 1;
+    }
+
+    protected function validateOrderBy($orderBy) {
+        if (!is_string($orderBy) || empty($orderBy)) {
+            return false;
+        }
+        $parts = explode(',', $orderBy);
+        foreach ($parts as $part) {
+            $part = trim($part);
+            $direction = '';
+            if (preg_match('/\s+(ASC|DESC)$/i', $part, $matches)) {
+                $direction = $matches[1];
+                $part = trim(str_replace($direction, '', $part));
+            }
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $part)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -40,7 +40,7 @@ class ProductModel extends BaseModel {
     public function getTotalByType($type) {
         $sql = $this->buildCountQuery() . " WHERE type = ? AND status = 1";
         $result = $this->fetch($sql, [$type]);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getProductDetail($id) {
@@ -57,6 +57,7 @@ class ProductModel extends BaseModel {
             $params[] = $type;
         }
 
+        $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
         $sql .= " AND (p.title LIKE ? OR p.author LIKE ? OR p.description LIKE ?)";
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
@@ -77,13 +78,14 @@ class ProductModel extends BaseModel {
             $params[] = $type;
         }
 
+        $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
         $sql .= " AND (title LIKE ? OR author LIKE ? OR description LIKE ?)";
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
 
         $result = $this->fetch($sql, $params);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function incrementDownloads($id) {
@@ -106,7 +108,7 @@ class ProductModel extends BaseModel {
     public function getTotalProducts() {
         $sql = $this->buildCountQuery();
         $result = $this->fetch($sql);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getTopProducts($limit = 10) {
@@ -151,7 +153,7 @@ class ProductModel extends BaseModel {
         }
 
         $result = $this->fetch($sql, $params);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function getProductsWithFilter($type, $category = 0, $search = '', $sort = 'latest', $page = 1, $perPage = 12) {
@@ -200,21 +202,21 @@ class ProductModel extends BaseModel {
         }
 
         $result = $this->fetch($sql, $params);
-        return $result['total'];
-    }
-
-    /**
-     * 增加商品销量
-     * @param int $productId 商品ID
-     * @return bool
-     */
-    public function increaseSales($productId) {
-        $sql = "UPDATE {$this->table} SET sales = sales + 1 WHERE id = ?";
-        return $this->execute($sql, [$productId]);
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function toggleStatus($id) {
         $sql = "UPDATE {$this->table} SET status = 1 - status WHERE id = ?";
         return $this->execute($sql, [$id]);
+    }
+
+    /**
+     * 更新商品评分统计
+     */
+    public function updateRatingStats($productId, $avgRating, $reviewCount) {
+        $sql = "UPDATE {$this->table} 
+                SET rating_avg = ?, review_count = ? 
+                WHERE id = ?";
+        return $this->execute($sql, [$avgRating, $reviewCount, $productId]);
     }
 }

@@ -129,3 +129,28 @@ CREATE INDEX idx_orders_product ON orders(product_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_downloads_user ON downloads(user_id);
 CREATE INDEX idx_downloads_product ON downloads(product_id);
+
+-- 商品评价表
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    order_id BIGINT NOT NULL COMMENT '关联购买订单',
+    rating TINYINT NOT NULL DEFAULT 5 COMMENT '评分 1-5星',
+    content TEXT DEFAULT NULL COMMENT '评价内容',
+    status TINYINT DEFAULT 1 COMMENT '1-正常显示 0-隐藏/违规',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    UNIQUE KEY unique_order_review (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 在 products 表中增加平均分和评价总数统计
+ALTER TABLE products ADD COLUMN rating_avg DECIMAL(3,2) DEFAULT 0.00 COMMENT '平均评分';
+ALTER TABLE products ADD COLUMN review_count INT DEFAULT 0 COMMENT '评价总数';
+
+-- 创建评价表索引
+CREATE INDEX idx_reviews_product ON reviews(product_id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
+CREATE INDEX idx_reviews_status ON reviews(status);

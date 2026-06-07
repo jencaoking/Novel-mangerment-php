@@ -5,6 +5,7 @@ use App\Models\ProductModel;
 use App\Models\CategoryModel;
 use App\Models\OrderModel;
 use App\Models\DownloadModel;
+use App\Models\ReviewModel;
 
 class ProductController {
     
@@ -12,12 +13,14 @@ class ProductController {
     protected $categoryModel;
     protected $orderModel;
     protected $downloadModel;
+    protected $reviewModel;
 
     public function __construct() {
         $this->productModel = new ProductModel();
         $this->categoryModel = new CategoryModel();
         $this->orderModel = new OrderModel();
         $this->downloadModel = new DownloadModel();
+        $this->reviewModel = new ReviewModel();
     }
     
     public function novels() {
@@ -62,11 +65,87 @@ class ProductController {
         }
 
         $hasPurchased = false;
+        $purchasedOrder = null;
+        $userReview = null;
         if (isLoggedIn()) {
-            $hasPurchased = $this->orderModel->hasPurchased(getCurrentUserId(), $productId);
+            $userId = getCurrentUserId();
+            $hasPurchased = $this->orderModel->hasPurchased($userId, $productId);
+            if ($hasPurchased) {
+                $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
+                if ($purchasedOrder) {
+                    $userReview = $this->reviewModel->hasReviewedOrder($purchasedOrder['id']);
+                }
+            }
         }
 
+        $reviews = $this->reviewModel->getProductReviews($productId, 1, 10);
+        $reviewCount = $this->reviewModel->getProductReviewCount($productId);
+        $ratingDistribution = $this->reviewModel->getRatingDistribution($productId);
+
         $message = '';
+        require __DIR__ . '/../../views/product.phtml';
+    }
+
+    /**
+     * 提交商品评价
+     */
+    public function submitReview($id) {
+        $productId = (int)$id;
+        
+        if (!isLoggedIn()) {
+            $_SESSION['redirect_url'] = "/product/{$productId}";
+            redirect('/login');
+        }
+
+        $userId = getCurrentUserId();
+        $message = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+                $message = '安全验证失败';
+            } else {
+                $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 5;
+                $content = isset($_POST['content']) ? trim($_POST['content']) : '';
+                
+                // 获取用户的已支付订单
+                $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
+                
+                if (!$purchasedOrder) {
+                    $message = '您还没有购买此商品，无法评价';
+                } elseif ($this->reviewModel->hasReviewedOrder($purchasedOrder['id'])) {
+                    $message = '您已经评价过此商品了';
+                } else {
+                    // 创建评价
+                    $reviewId = $this->reviewModel->createReview(
+                        $userId,
+                        $productId,
+                        $purchasedOrder['id'],
+                        $rating,
+                        $content
+                    );
+                    
+                    if ($reviewId) {
+                        // 更新商品评分统计
+                        $stats = $this->reviewModel->calculateProductStats($productId);
+                        $this->productModel->updateRatingStats($productId, $stats['avg_rating'], $stats['review_count']);
+                        
+                        $message = '评价成功！';
+                    } else {
+                        $message = '评价失败，请稍后再试';
+                    }
+                }
+            }
+        }
+
+        // 重新获取商品和评价数据
+        $product = $this->productModel->getProductDetail($productId);
+        $hasPurchased = $this->orderModel->hasPurchased($userId, $productId);
+        $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
+        $userReview = $this->reviewModel->hasReviewedOrder($purchasedOrder['id']);
+        $reviews = $this->reviewModel->getProductReviews($productId, 1, 10);
+        $reviewCount = $this->reviewModel->getProductReviewCount($productId);
+        $ratingDistribution = $this->reviewModel->getRatingDistribution($productId);
+
         require __DIR__ . '/../../views/product.phtml';
     }
     

@@ -7,6 +7,9 @@ class CartModel extends BaseModel {
     protected $fillable = ['user_id', 'product_id'];
 
     public function addToCart($userId, $productId) {
+        if ($this->isInCart($userId, $productId)) {
+            return false;
+        }
         $data = [
             'user_id' => $userId,
             'product_id' => $productId

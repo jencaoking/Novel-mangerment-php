@@ -86,19 +86,34 @@
                     </p>
                     
                     <div class="product-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">价格</span>
-                            <span class="stat-value price"><?= formatPrice($product['price']) ?></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">销量</span>
-                            <span class="stat-value"><?= $product['sales'] ?></span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">下载量</span>
-                            <span class="stat-value"><?= $product['downloads'] ?></span>
-                        </div>
+            <div class="stat-item">
+                <span class="stat-label">价格</span>
+                <span class="stat-value price"><?= formatPrice($product['price']) ?></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">销量</span>
+                <span class="stat-value"><?= $product['sales'] ?></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">下载量</span>
+                <span class="stat-value"><?= $product['downloads'] ?></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">评分</span>
+                <span class="stat-value">
+                    <div class="star-rating" data-rating="<?= $product['rating_avg'] ?? 0 ?>">
+                        <?php for($i = 1; $i <= 5; $i++): ?>
+                            <span class="star <?= ($i <= ($product['rating_avg'] ?? 0)) ? 'filled' : '' ?>">★</span>
+                        <?php endfor; ?>
                     </div>
+                    <span class="rating-text"><?= number_format($product['rating_avg'] ?? 0, 1) ?></span>
+                </span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">评价</span>
+                <span class="stat-value"><?= $product['review_count'] ?? 0 ?></span>
+            </div>
+        </div>
                     
                     <div class="product-description">
                         <h3>简介</h3>
@@ -133,6 +148,131 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- 评价区域 -->
+    <section class="reviews-section">
+        <div class="container">
+            <h2 class="section-title">商品评价</h2>
+            
+            <?php if ($reviewCount > 0): ?>
+                <div class="reviews-summary">
+                    <div class="rating-overview">
+                        <div class="big-rating">
+                            <span class="rating-number"><?= number_format($product['rating_avg'] ?? 0, 1) ?></span>
+                            <div class="stars">
+                                <?php for($i = 1; $i <= 5; $i++): ?>
+                                    <span class="star <?= ($i <= ($product['rating_avg'] ?? 0)) ? 'filled' : '' ?>">★</span>
+                                <?php endfor; ?>
+                            </div>
+                            <span class="review-count">(<?= $reviewCount ?> 条评价)</span>
+                        </div>
+                        <div class="rating-bars">
+                            <?php 
+                            $totalReviews = $reviewCount;
+                            for($star = 5; $star >= 1; $star--):
+                                $count = 0;
+                                foreach($ratingDistribution as $dist) {
+                                    if ($dist['rating'] == $star) {
+                                        $count = $dist['count'];
+                                        break;
+                                    }
+                                }
+                                $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                            ?>
+                                <div class="rating-bar-row">
+                                    <span class="star-label"><?= $star ?> 星</span>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: <?= $percentage ?>%"></div>
+                                    </div>
+                                    <span class="bar-count"><?= $count ?></span>
+                                </div>
+                            <?php endfor; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- 评价表单 -->
+            <?php if (isLoggedIn() && $hasPurchased && !$userReview): ?>
+                <div class="review-form-container">
+                    <h3>发表评价</h3>
+                    <?php if ($message): ?>
+                        <div class="alert alert-info"><?= e($message) ?></div>
+                    <?php endif; ?>
+                    <form method="POST" action="/product/<?= $productId ?>/review" class="review-form">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <div class="form-group">
+                            <label>评分</label>
+                            <div class="rating-selector">
+                                <?php for($i = 5; $i >= 1; $i--): ?>
+                                    <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" <?= $i == 5 ? 'checked' : '' ?>>
+                                    <label for="star<?= $i ?>" class="rating-star">★</label>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="content">评价内容</label>
+                            <textarea id="content" name="content" rows="4" placeholder="分享您的使用体验..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">提交评价</button>
+                    </form>
+                </div>
+            <?php elseif (isLoggedIn() && $hasPurchased && $userReview): ?>
+                <div class="alert alert-success">
+                    您已评价过此商品，感谢您的评价！
+                </div>
+            <?php elseif (isLoggedIn() && !$hasPurchased): ?>
+                <div class="alert alert-info">
+                    购买此商品后即可发表评价
+                </div>
+            <?php else: ?>
+                <div class="alert alert-info">
+                    <a href="/login">登录</a> 并购买商品后即可发表评价
+                </div>
+            <?php endif; ?>
+
+            <!-- 评价列表 -->
+            <?php if (count($reviews) > 0): ?>
+                <div class="reviews-list">
+                    <?php foreach($reviews as $review): ?>
+                        <div class="review-item">
+                            <div class="review-header">
+                                <div class="reviewer-info">
+                                    <div class="reviewer-avatar">
+                                        <?= $review['avatar'] ? '<img src="/uploads/avatar/' . e($review['avatar']) . '" alt="">' : mb_substr($review['username'], 0, 1) ?>
+                                    </div>
+                                    <div class="reviewer-details">
+                                        <span class="reviewer-name"><?= e($review['username']) ?></span>
+                                        <div class="review-stars">
+                                            <?php for($i = 1; $i <= 5; $i++): ?>
+                                                <span class="star <?= ($i <= $review['rating']) ? 'filled' : '' ?>">★</span>
+                                            <?php endfor; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="review-date"><?= date('Y-m-d H:i', strtotime($review['create_time'])) ?></span>
+                            </div>
+                            <?php if ($review['content']): ?>
+                                <div class="review-content">
+                                    <p><?= nl2br(e($review['content'])) ?></p>
+                                </div>
+                            <?php endif; ?>
+                            <div class="verified-badge">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                </svg>
+                                已购买
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="no-reviews">
+                    暂无评价，快来发表第一条评价吧！
+                </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -187,8 +327,14 @@
         
         .alert-success {
             background: #efe;
-            color: var(--success-color);
+            color: #2e7d32;
             border: 1px solid #cfc;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
         }
         
         .product-detail-grid {
@@ -256,7 +402,7 @@
         
         .product-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: var(--spacing-lg);
             padding: var(--spacing-lg);
             background: var(--gray-50);
@@ -285,6 +431,31 @@
             color: var(--accent-color);
         }
         
+        .star-rating {
+            display: inline-flex;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .star-rating .star,
+        .stars .star,
+        .review-stars .star {
+            color: #ddd;
+            font-size: 1rem;
+        }
+        
+        .star-rating .star.filled,
+        .stars .star.filled,
+        .review-stars .star.filled {
+            color: #ffc107;
+        }
+        
+        .rating-text {
+            font-size: 1rem;
+            color: var(--gray-700);
+            margin-left: 4px;
+        }
+        
         .product-description {
             margin-bottom: var(--spacing-xl);
         }
@@ -308,6 +479,262 @@
             font-size: 1.1rem;
         }
         
+        /* Reviews Section Styles */
+        .reviews-section {
+            padding: var(--spacing-3xl) 0;
+            background: var(--gray-50);
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: var(--spacing-xl);
+            color: var(--gray-900);
+        }
+        
+        .reviews-summary {
+            background: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .rating-overview {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: var(--spacing-xl);
+            align-items: center;
+        }
+        
+        .big-rating {
+            text-align: center;
+        }
+        
+        .rating-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+        
+        .big-rating .stars {
+            margin: var(--spacing-sm) 0;
+        }
+        
+        .big-rating .stars .star {
+            font-size: 1.5rem;
+        }
+        
+        .review-count {
+            color: var(--gray-600);
+        }
+        
+        .rating-bars {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .rating-bar-row {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .star-label {
+            width: 50px;
+            font-size: 0.9rem;
+            color: var(--gray-700);
+        }
+        
+        .bar-container {
+            flex: 1;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffc107, #ff9800);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .bar-count {
+            width: 40px;
+            text-align: right;
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+        
+        .review-form-container {
+            background: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .review-form-container h3 {
+            margin-bottom: var(--spacing-lg);
+            color: var(--gray-900);
+        }
+        
+        .review-form {
+            max-width: 600px;
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        .rating-selector {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        
+        .rating-selector input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-selector .rating-star {
+            font-size: 2rem;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .rating-selector input[type="radio"]:checked ~ .rating-star,
+        .rating-selector .rating-star:hover,
+        .rating-selector .rating-star:hover ~ .rating-star {
+            color: #ffc107;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        
+        .review-item {
+            background: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+        
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .reviewer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            overflow: hidden;
+        }
+        
+        .reviewer-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .reviewer-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .reviewer-name {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .review-stars .star {
+            font-size: 0.9rem;
+        }
+        
+        .review-date {
+            color: var(--gray-500);
+            font-size: 0.9rem;
+        }
+        
+        .review-content {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .review-content p {
+            line-height: 1.7;
+            color: var(--gray-700);
+            margin: 0;
+        }
+        
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 0.8rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .no-reviews {
+            text-align: center;
+            padding: var(--spacing-3xl);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            color: var(--gray-500);
+            font-size: 1.1rem;
+        }
+        
         @media (max-width: 768px) {
             .product-detail-grid {
                 grid-template-columns: 1fr;
@@ -318,6 +745,10 @@
             }
             
             .product-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .rating-overview {
                 grid-template-columns: 1fr;
             }
         }

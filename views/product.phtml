@@ -152,127 +152,57 @@
     </section>
 
     <!-- 评价区域 -->
-    <section class="reviews-section">
-        <div class="container">
-            <h2 class="section-title">商品评价</h2>
-            
-            <?php if ($reviewCount > 0): ?>
-                <div class="reviews-summary">
-                    <div class="rating-overview">
-                        <div class="big-rating">
-                            <span class="rating-number"><?= number_format($product['rating_avg'] ?? 0, 1) ?></span>
-                            <div class="stars">
-                                <?php for($i = 1; $i <= 5; $i++): ?>
-                                    <span class="star <?= ($i <= ($product['rating_avg'] ?? 0)) ? 'filled' : '' ?>">★</span>
-                                <?php endfor; ?>
-                            </div>
-                            <span class="review-count">(<?= $reviewCount ?> 条评价)</span>
+    <div class="product-reviews-section" style="grid-column: 1 / -1; margin-top: 2rem;">
+        <h3>用户评价 (<?= count($reviews) ?>)</h3>
+        
+        <?php if ($hasPurchased && !$hasReviewed): ?>
+            <div class="review-form-container" style="background: var(--white); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h4>发表评价</h4>
+                <form id="reviewForm" onsubmit="submitReview(event, <?= $productId ?>)">
+                    <div style="margin-bottom: 10px;">
+                        <label>评分：</label>
+                        <select name="rating" id="reviewRating" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+                            <option value="4">⭐⭐⭐⭐ (4星)</option>
+                            <option value="3">⭐⭐⭐ (3星)</option>
+                            <option value="2">⭐⭐ (2星)</option>
+                            <option value="1">⭐ (1星)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <textarea name="content" id="reviewContent" rows="3" placeholder="说说您的使用体验吧..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">提交评价</button>
+                </form>
+            </div>
+        <?php elseif ($hasPurchased && $hasReviewed): ?>
+            <div class="alert alert-success">您已评价过此商品，感谢您的反馈！</div>
+        <?php endif; ?>
+
+        <div class="reviews-list">
+            <?php if (empty($reviews)): ?>
+                <p style="text-align: center; padding: 30px; color: #999;">暂无评价，快来抢沙发吧！</p>
+            <?php else: ?>
+                <?php foreach ($reviews as $review): ?>
+                    <div class="review-item" style="background: var(--white); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div class="review-header" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <strong style="color: #333;"><?= e($review['username']) ?></strong>
+                            <span style="color: #f5a623; font-size: 1.2rem;">
+                                <?= str_repeat('⭐', $review['rating']) ?>
+                            </span>
                         </div>
-                        <div class="rating-bars">
-                            <?php 
-                            $totalReviews = $reviewCount;
-                            for($star = 5; $star >= 1; $star--):
-                                $count = 0;
-                                foreach($ratingDistribution as $dist) {
-                                    if ($dist['rating'] == $star) {
-                                        $count = $dist['count'];
-                                        break;
-                                    }
-                                }
-                                $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
-                            ?>
-                                <div class="rating-bar-row">
-                                    <span class="star-label"><?= $star ?> 星</span>
-                                    <div class="bar-container">
-                                        <div class="bar-fill" style="width: <?= $percentage ?>%"></div>
-                                    </div>
-                                    <span class="bar-count"><?= $count ?></span>
-                                </div>
-                            <?php endfor; ?>
+                        <div class="review-body" style="margin-bottom: 10px;">
+                            <p style="color: #666; line-height: 1.6; margin: 0;"><?= nl2br(e($review['content'])) ?></p>
+                        </div>
+                        <div class="review-footer" style="font-size: 0.85rem; color: #999;">
+                            <span style="display: inline-block; padding: 2px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 3px; margin-right: 10px;">已购买</span>
+                            <?= date('Y-m-d H:i', strtotime($review['create_time'])) ?>
                         </div>
                     </div>
-                </div>
-            <?php endif; ?>
-
-            <!-- 评价表单 -->
-            <?php if (isLoggedIn() && $hasPurchased && !$hasReviewed): ?>
-                <div class="review-form-container">
-                    <h3>发表评价</h3>
-                    <form id="review-form" class="review-form">
-                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                        <div class="form-group">
-                            <label>评分</label>
-                            <div class="rating-selector">
-                                <?php for($i = 5; $i >= 1; $i--): ?>
-                                    <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" <?= $i == 5 ? 'checked' : '' ?>>
-                                    <label for="star<?= $i ?>" class="rating-star">★</label>
-                                <?php endfor; ?>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="review-content">评价内容</label>
-                            <textarea id="review-content" name="content" rows="4" placeholder="分享您的使用体验..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">提交评价</button>
-                    </form>
-                    <div id="review-message" class="alert" style="display: none;"></div>
-                </div>
-            <?php elseif (isLoggedIn() && $hasPurchased && $hasReviewed): ?>
-                <div class="alert alert-success">
-                    您已评价过此商品，感谢您的评价！
-                </div>
-            <?php elseif (isLoggedIn() && !$hasPurchased): ?>
-                <div class="alert alert-info">
-                    购买此商品后即可发表评价
-                </div>
-            <?php else: ?>
-                <div class="alert alert-info">
-                    <a href="/login">登录</a> 并购买商品后即可发表评价
-                </div>
-            <?php endif; ?>
-
-            <!-- 评价列表 -->
-            <?php if (count($reviews) > 0): ?>
-                <div class="reviews-list">
-                    <?php foreach($reviews as $review): ?>
-                        <div class="review-item">
-                            <div class="review-header">
-                                <div class="reviewer-info">
-                                    <div class="reviewer-avatar">
-                                        <?= $review['avatar'] ? '<img src="/uploads/avatar/' . e($review['avatar']) . '" alt="">' : mb_substr($review['username'], 0, 1) ?>
-                                    </div>
-                                    <div class="reviewer-details">
-                                        <span class="reviewer-name"><?= e($review['username']) ?></span>
-                                        <div class="review-stars">
-                                            <?php for($i = 1; $i <= 5; $i++): ?>
-                                                <span class="star <?= ($i <= $review['rating']) ? 'filled' : '' ?>">★</span>
-                                            <?php endfor; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span class="review-date"><?= date('Y-m-d H:i', strtotime($review['create_time'])) ?></span>
-                            </div>
-                            <?php if ($review['content']): ?>
-                                <div class="review-content">
-                                    <p><?= nl2br(e($review['content'])) ?></p>
-                                </div>
-                            <?php endif; ?>
-                            <div class="verified-badge">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                </svg>
-                                已购买
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <div class="no-reviews">
-                    暂无评价，快来发表第一条评价吧！
-                </div>
+                <?php endforeach; ?>
             <?php endif; ?>
         </div>
-    </section>
+    </div>
 
     <footer class="footer">
         <div class="container">
@@ -308,50 +238,32 @@
         }
 
         // 提交评价 (AJAX)
-        document.addEventListener('DOMContentLoaded', function() {
-            const reviewForm = document.getElementById('review-form');
-            if (reviewForm) {
-                reviewForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    const formData = new FormData(reviewForm);
-                    const productId = <?= $productId ?>;
-                    
-                    fetch(`/product/${productId}/review`, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        const messageDiv = document.getElementById('review-message');
-                        messageDiv.style.display = 'block';
-                        
-                        if (data.success) {
-                            messageDiv.className = 'alert alert-success';
-                            messageDiv.textContent = data.message;
-                            
-                            // 清空表单
-                            reviewForm.style.display = 'none';
-                            
-                            // 刷新页面以显示新评价
-                            setTimeout(function() {
-                                location.reload();
-                            }, 1500);
-                        } else {
-                            messageDiv.className = 'alert alert-info';
-                            messageDiv.textContent = data.message;
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error:', err);
-                        const messageDiv = document.getElementById('review-message');
-                        messageDiv.style.display = 'block';
-                        messageDiv.className = 'alert alert-info';
-                        messageDiv.textContent = '网络错误，请稍后重试';
-                    });
-                });
-            }
-        });
+        function submitReview(event, productId) {
+            event.preventDefault();
+            const rating = document.getElementById('reviewRating').value;
+            const content = document.getElementById('reviewContent').value;
+
+            fetch(`/product/review/${productId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `rating=${rating}&content=${encodeURIComponent(content)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('评价提交成功！');
+                    window.location.reload(); // 刷新页面以显示新评价
+                } else {
+                    alert(data.message || '提交失败');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('网络错误，请稍后再试');
+            });
+        }
     </script>
     
     <style>

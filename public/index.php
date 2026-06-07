@@ -95,7 +95,7 @@ try {
     $router->get('/product/{id}', 'ProductController@show');
     $router->post('/product/{id}', 'ProductController@buy');
     $router->get('/download/{id}', 'ProductController@download', ['AuthMiddleware']);
-    $router->post('/product/{id}/review', 'ProductController@submitReview', ['AuthMiddleware']);
+    $router->post('/product/review/{id}', 'ProductController@submitReview', ['AuthMiddleware']);
     
     // ==========================================
     // 2. 认证模块路由（登录/注册/登出）

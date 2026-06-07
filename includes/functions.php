@@ -13,6 +13,21 @@ function e($string) {
 }
 
 /**
+ * 转义 LIKE 查询的特殊字符
+ * 防止 LIKE 通配符攻击
+ * 
+ * @param string $keyword 搜索关键词
+ * @return string 转义后的关键词（不含百分号，可直接用于 LIKE 查询）
+ */
+function escapeLike($keyword) {
+    // 先转义反斜杠，再转义通配符
+    // 这样可以确保用户输入的 \、% 和 _ 都被正确转义
+    $keyword = addcslashes($keyword, '\\');
+    $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
+    return $keyword;
+}
+
+/**
  * 生成CSRF Token
  */
 function generateCSRFToken() {

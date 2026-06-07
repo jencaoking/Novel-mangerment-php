@@ -57,7 +57,7 @@ class ProductModel extends BaseModel {
             $params[] = $type;
         }
 
-        $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
+        $keyword = escapeLike($keyword);
         $sql .= " AND (p.title LIKE ? OR p.author LIKE ? OR p.description LIKE ?)";
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
@@ -78,7 +78,7 @@ class ProductModel extends BaseModel {
             $params[] = $type;
         }
 
-        $keyword = str_replace(['%', '_'], ['\%', '\_'], $keyword);
+        $keyword = escapeLike($keyword);
         $sql .= " AND (title LIKE ? OR author LIKE ? OR description LIKE ?)";
         $params[] = "%{$keyword}%";
         $params[] = "%{$keyword}%";
@@ -121,7 +121,7 @@ class ProductModel extends BaseModel {
         }
 
         if ($search) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
+            $search = escapeLike($search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -143,7 +143,7 @@ class ProductModel extends BaseModel {
         }
 
         if ($search) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
+            $search = escapeLike($search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -163,7 +163,7 @@ class ProductModel extends BaseModel {
         }
 
         if (!empty($search)) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
+            $search = escapeLike($search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -192,7 +192,7 @@ class ProductModel extends BaseModel {
         }
 
         if (!empty($search)) {
-            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
+            $search = escapeLike($search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";

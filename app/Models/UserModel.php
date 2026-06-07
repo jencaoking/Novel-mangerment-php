@@ -79,9 +79,10 @@ class UserModel extends BaseModel {
         $params = [];
 
         if ($search) {
+            $search = escapeLike($search);
             $sql .= " AND (username LIKE ? OR email LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
         }
 
         $sql .= " ORDER BY create_time DESC LIMIT ?, ?";
@@ -96,9 +97,10 @@ class UserModel extends BaseModel {
         $params = [];
 
         if ($search) {
+            $search = escapeLike($search);
             $sql .= " AND (username LIKE ? OR email LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
         }
 
         $result = $this->fetch($sql, $params);

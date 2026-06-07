@@ -105,8 +105,8 @@ class ReviewModel extends BaseModel {
                 WHERE 1=1";
         
         if (!empty($search)) {
-            // LIKE 查询特殊字符转义，防止通配符攻击
-            $searchEscaped = '%' . str_replace(['%', '_'], ['\%', '\_'], $search) . '%';
+            // 使用 escapeLike 函数安全转义搜索关键词
+            $searchEscaped = '%' . escapeLike($search) . '%';
             $sql .= " AND (u.username LIKE ? OR p.title LIKE ? OR r.content LIKE ?)";
             $params = array_fill(0, 3, $searchEscaped);
         }
@@ -130,8 +130,8 @@ class ReviewModel extends BaseModel {
                 WHERE 1=1";
                 
         if (!empty($search)) {
-            // LIKE 查询特殊字符转义，防止通配符攻击
-            $searchEscaped = '%' . str_replace(['%', '_'], ['\%', '\_'], $search) . '%';
+            // 使用 escapeLike 函数安全转义搜索关键词
+            $searchEscaped = '%' . escapeLike($search) . '%';
             $sql .= " AND (u.username LIKE ? OR p.title LIKE ? OR r.content LIKE ?)";
             $params = array_fill(0, 3, $searchEscaped);
         }

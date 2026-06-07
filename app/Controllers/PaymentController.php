@@ -130,7 +130,9 @@ class PaymentController
             return;
         }
 
-        if (bccomp($order['price'], $totalAmount, 2) !== 0) {
+        // 使用高精度比较（4位小数）防止金额被篡改
+        // 支付宝金额最多支持2位小数，但验证时使用更高精度确保安全
+        if (bccomp($order['price'], $totalAmount, 4) !== 0) {
             error_log('支付宝异步通知：金额不匹配 - 订单:' . $order['price'] . ', 通知:' . $totalAmount);
             echo 'fail';
             return;
@@ -167,8 +169,14 @@ class PaymentController
                 return;
             }
             
-            $expectedTotal = array_sum(array_column($orders, 'price'));
-            if (bccomp($expectedTotal, $totalAmount, 2) !== 0) {
+            // 计算预期总金额（使用 BCMath 确保精度）
+            $expectedTotal = '0';
+            foreach ($orders as $order) {
+                $expectedTotal = bcadd($expectedTotal, $order['price'], 4);
+            }
+            
+            // 使用高精度比较（4位小数）防止金额被篡改
+            if (bccomp($expectedTotal, $totalAmount, 4) !== 0) {
                 error_log('支付宝异步通知：批次总金额不匹配 - 预期:' . $expectedTotal . ', 实际:' . $totalAmount);
                 echo 'fail';
                 return;

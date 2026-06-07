@@ -4,7 +4,7 @@ namespace App\Models;
 class OrderModel extends BaseModel {
     protected $table = 'orders';
     protected $primaryKey = 'id';
-    protected $fillable = ['order_no', 'user_id', 'product_id', 'price', 'status', 'pay_time', 'cancel_time', 'refund_time', 'refund_reason'];
+    protected $fillable = ['order_no', 'user_id', 'product_id', 'price', 'status', 'pay_time', 'cancel_time', 'refund_time', 'refund_reason', 'payment_channel', 'trade_no'];
 
     public function createOrder($userId, $productId, $price) {
         $orderNo = date('YmdHis') . substr(uniqid('', true), -10);

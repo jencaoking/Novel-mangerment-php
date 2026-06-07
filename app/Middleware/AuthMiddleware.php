@@ -6,12 +6,11 @@ use Core\Middleware\MiddlewareInterface;
 class AuthMiddleware implements MiddlewareInterface {
     public function handle(): bool {
         if (!isLoggedIn()) {
-            $uri = $_SERVER['REQUEST_URI'];
-            if (strpos($uri, '/') === 0 && strpos($uri, '//') !== 0) {
-                $_SESSION['redirect_url'] = $uri;
-            }
+            $parsedUrl = parse_url($_SERVER['REQUEST_URI']);
+            $safePath = $parsedUrl['path'] ?? '/';
+            $safeUri = $safePath . (isset($parsedUrl['query']) ? '?' . $parsedUrl['query'] : '');
+            $_SESSION['redirect_url'] = $safeUri;
             redirect('/login');
-            exit();
         }
         return true;
     }

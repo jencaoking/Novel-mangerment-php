@@ -35,6 +35,7 @@ require_once '../includes/db.php';
 require_once '../includes/functions.php';
 require_once '../includes/auth.php';
 require_once '../includes/AlipaySDK.php';
+require_once '../includes/WechatPaySDK.php';
 
 // ==========================================
 // 🛡️ 全局异常与错误拦截网
@@ -116,6 +117,8 @@ try {
     $router->post('/payment/notify', 'PaymentController@notify');
     $router->get('/payment/return', 'PaymentController@returnUrl');
     $router->get('/payment/query/{orderId}', 'PaymentController@query', ['AuthMiddleware']);
+    $router->get('/payment/wechat/qr/{orderId}', 'PaymentController@wxpay', ['AuthMiddleware']);
+    $router->post('/payment/wechat/notify', 'PaymentController@wechatNotify');
     
     // ==========================================
     // 2.6 购物车模块路由

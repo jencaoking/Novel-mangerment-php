@@ -30,9 +30,39 @@ define('ALLOWED_NOVEL_TYPES', ['txt']);
 define('ALLOWED_MUSIC_TYPES', ['mp3', 'wav', 'ogg']);
 define('ALLOWED_IMAGE_TYPES', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
 
+// ================================================
+// 支付宝配置
+// ================================================
+define('ALIPAY_APP_ID', 'your_alipay_app_id');
+define('ALIPAY_PRIVATE_KEY', 'your_alipay_private_key');
+define('ALIPAY_PUBLIC_KEY', 'your_alipay_public_key');
+define('ALIPAY_GATEWAY_URL', 'https://openapi.alipay.com/gateway.do');
+define('ALIPAY_RETURN_URL', 'http://localhost/bookmusic/payment/return');
+define('ALIPAY_NOTIFY_URL', 'http://localhost/bookmusic/payment/notify');
+
+// ================================================
+// 微信支付配置
+// ================================================
+// 微信公众号/小程序 AppID
+define('WECHAT_APP_ID', 'your_wechat_app_id');
+// 微信支付商户号
+define('WECHAT_MCH_ID', 'your_wechat_mch_id');
+// API v3 密钥（32位）
+define('WECHAT_API_V3_KEY', 'your_wechat_api_v3_key');
+// 商户API证书序列号
+define('WECHAT_CERT_SERIAL', 'your_wechat_cert_serial');
+// 商户私钥文件路径
+define('WECHAT_PRIVATE_KEY_PATH', __DIR__ . '/../cert/apiclient_key.pem');
+// 微信支付平台证书文件路径
+define('WECHAT_CERT_PATH', __DIR__ . '/../cert/wechatpay_cert.pem');
+// 微信支付平台证书序列号（用于验证回调签名）
+define('WECHAT_PLATFORM_CERT_SERIAL', 'your_wechat_platform_cert_serial');
+// 微信支付回调地址
+define('WECHAT_NOTIFY_URL', 'http://localhost/bookmusic/payment/wechat_notify');
+
+// ================================================
 // Session配置
-define('SESSION_NAME', 'bookmusic_session');
-define('SESSION_LIFETIME', 7200); // 2小时
+// ================================================
 
 // 安全配置
 define('HASH_COST', 12); // bcrypt加密强度

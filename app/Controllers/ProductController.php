@@ -106,6 +106,12 @@ class ProductController {
         $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 5;
         $content = isset($_POST['content']) ? trim($_POST['content']) : '';
 
+        // CSRF 令牌验证
+        if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            echo json_encode(['success' => false, 'message' => '安全验证失败']);
+            return;
+        }
+
         // 1. 验证评分合法性
         if ($rating < 1 || $rating > 5) {
             echo json_encode(['success' => false, 'message' => '评分参数错误']);

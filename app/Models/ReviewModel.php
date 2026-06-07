@@ -10,6 +10,8 @@ class ReviewModel extends BaseModel {
      * 添加评价
      */
     public function addReview($userId, $productId, $orderId, $rating, $content) {
+        // 确保评分在 1-5 范围内
+        $rating = max(1, min(5, $rating));
         $sql = "INSERT INTO {$this->table} (user_id, product_id, order_id, rating, content) VALUES (?, ?, ?, ?, ?)";
         return $this->execute($sql, [$userId, $productId, $orderId, $rating, $content]);
     }

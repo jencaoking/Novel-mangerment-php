@@ -399,6 +399,9 @@ class AdminController
         $pageTitle = '评价管理';
         $currentPage = 'reviews';
         
+        // 确保搜索变量传递给视图
+        $search = $search;
+        
         require __DIR__ . '/../../views/admin/reviews.phtml';
     }
 
@@ -433,9 +436,11 @@ class AdminController
             $stats = $this->reviewModel->calculateProductStats($review['product_id']);
             $this->productModel->updateRatingStats($review['product_id'], $stats['avg_rating'], $stats['review_count']);
             
+            // 计算新状态并返回准确的提示消息
+            $newStatus = 1 - $review['status'];
             echo json_encode([
                 'success' => true, 
-                'message' => $review['status'] == 1 ? '评价已隐藏' : '评价已显示'
+                'message' => $newStatus == 1 ? '评价已显示' : '评价已隐藏'
             ]);
         } catch (\Exception $e) {
             error_log('切换评价状态失败: ' . $e->getMessage());

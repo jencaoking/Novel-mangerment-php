@@ -12,12 +12,12 @@ class PaymentController
 
     public function __construct(
         OrderModel $orderModel,
-        ProductModel $productModel
+        ProductModel $productModel,
+        \AlipaySDK $alipaySDK
     ) {
-        require_once __DIR__ . '/../../includes/AlipaySDK.php';
         $this->orderModel = $orderModel;
         $this->productModel = $productModel;
-        $this->alipaySDK = new \AlipaySDK();
+        $this->alipaySDK = $alipaySDK;
     }
 
     public function pay($orderId)

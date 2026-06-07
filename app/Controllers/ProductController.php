@@ -65,20 +65,24 @@ class ProductController {
         }
 
         $hasPurchased = false;
-        $purchasedOrder = null;
-        $userReview = null;
+        $paidOrder = null;
+        $hasReviewed = false;
+        
         if (isLoggedIn()) {
             $userId = getCurrentUserId();
             $hasPurchased = $this->orderModel->hasPurchased($userId, $productId);
+            
+            // 如果购买过，获取订单信息，检查是否已评价
             if ($hasPurchased) {
-                $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
-                if ($purchasedOrder) {
-                    $userReview = $this->reviewModel->hasReviewedOrder($purchasedOrder['id']);
+                $paidOrder = $this->orderModel->getPaidOrder($userId, $productId);
+                if ($paidOrder) {
+                    $hasReviewed = $this->reviewModel->hasReviewed($paidOrder['id']);
                 }
             }
         }
 
-        $reviews = $this->reviewModel->getProductReviews($productId, 1, 10);
+        // 获取当前商品的评价列表
+        $reviews = $this->reviewModel->getReviewsByProduct($productId, 1, 10);
         $reviewCount = $this->reviewModel->getProductReviewCount($productId);
         $ratingDistribution = $this->reviewModel->getRatingDistribution($productId);
 
@@ -87,66 +91,53 @@ class ProductController {
     }
 
     /**
-     * 提交商品评价
+     * 提交商品评价 (AJAX 模式)
      */
     public function submitReview($id) {
+        header('Content-Type: application/json');
         $productId = (int)$id;
         
         if (!isLoggedIn()) {
-            $_SESSION['redirect_url'] = "/product/{$productId}";
-            redirect('/login');
+            echo json_encode(['success' => false, 'message' => '请先登录']);
+            return;
         }
 
         $userId = getCurrentUserId();
-        $message = '';
+        $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 5;
+        $content = isset($_POST['content']) ? trim($_POST['content']) : '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-                $message = '安全验证失败';
-            } else {
-                $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 5;
-                $content = isset($_POST['content']) ? trim($_POST['content']) : '';
-                
-                // 获取用户的已支付订单
-                $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
-                
-                if (!$purchasedOrder) {
-                    $message = '您还没有购买此商品，无法评价';
-                } elseif ($this->reviewModel->hasReviewedOrder($purchasedOrder['id'])) {
-                    $message = '您已经评价过此商品了';
-                } else {
-                    // 创建评价
-                    $reviewId = $this->reviewModel->createReview(
-                        $userId,
-                        $productId,
-                        $purchasedOrder['id'],
-                        $rating,
-                        $content
-                    );
-                    
-                    if ($reviewId) {
-                        // 更新商品评分统计
-                        $stats = $this->reviewModel->calculateProductStats($productId);
-                        $this->productModel->updateRatingStats($productId, $stats['avg_rating'], $stats['review_count']);
-                        
-                        $message = '评价成功！';
-                    } else {
-                        $message = '评价失败，请稍后再试';
-                    }
-                }
-            }
+        // 1. 验证评分合法性
+        if ($rating < 1 || $rating > 5) {
+            echo json_encode(['success' => false, 'message' => '评分参数错误']);
+            return;
         }
 
-        // 重新获取商品和评价数据
-        $product = $this->productModel->getProductDetail($productId);
-        $hasPurchased = $this->orderModel->hasPurchased($userId, $productId);
-        $purchasedOrder = $this->orderModel->getPaidOrder($userId, $productId);
-        $userReview = $this->reviewModel->hasReviewedOrder($purchasedOrder['id']);
-        $reviews = $this->reviewModel->getProductReviews($productId, 1, 10);
-        $reviewCount = $this->reviewModel->getProductReviewCount($productId);
-        $ratingDistribution = $this->reviewModel->getRatingDistribution($productId);
+        // 2. 验证购买权限
+        $order = $this->orderModel->getPaidOrder($userId, $productId);
+        if (!$order) {
+            echo json_encode(['success' => false, 'message' => '只有购买过的用户才能评价']);
+            return;
+        }
 
-        require __DIR__ . '/../../views/product.phtml';
+        // 3. 验证是否重复评价
+        if ($this->reviewModel->hasReviewed($order['id'])) {
+            echo json_encode(['success' => false, 'message' => '您已经评价过该商品了']);
+            return;
+        }
+
+        // 4. 插入评价
+        try {
+            $this->reviewModel->addReview($userId, $productId, $order['id'], $rating, $content);
+            
+            // 更新商品的平均分和评价总数
+            $stats = $this->reviewModel->calculateProductStats($productId);
+            $this->productModel->updateRatingStats($productId, $stats['avg_rating'], $stats['review_count']);
+            
+            echo json_encode(['success' => true, 'message' => '评价成功！']);
+        } catch (\Exception $e) {
+            error_log('评价异常: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => '评价失败，请稍后重试']);
+        }
     }
     
     public function buy($id) {

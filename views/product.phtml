@@ -195,13 +195,10 @@
             <?php endif; ?>
 
             <!-- 评价表单 -->
-            <?php if (isLoggedIn() && $hasPurchased && !$userReview): ?>
+            <?php if (isLoggedIn() && $hasPurchased && !$hasReviewed): ?>
                 <div class="review-form-container">
                     <h3>发表评价</h3>
-                    <?php if ($message): ?>
-                        <div class="alert alert-info"><?= e($message) ?></div>
-                    <?php endif; ?>
-                    <form method="POST" action="/product/<?= $productId ?>/review" class="review-form">
+                    <form id="review-form" class="review-form">
                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <div class="form-group">
                             <label>评分</label>
@@ -213,13 +210,14 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="content">评价内容</label>
-                            <textarea id="content" name="content" rows="4" placeholder="分享您的使用体验..."></textarea>
+                            <label for="review-content">评价内容</label>
+                            <textarea id="review-content" name="content" rows="4" placeholder="分享您的使用体验..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">提交评价</button>
                     </form>
+                    <div id="review-message" class="alert" style="display: none;"></div>
                 </div>
-            <?php elseif (isLoggedIn() && $hasPurchased && $userReview): ?>
+            <?php elseif (isLoggedIn() && $hasPurchased && $hasReviewed): ?>
                 <div class="alert alert-success">
                     您已评价过此商品，感谢您的评价！
                 </div>
@@ -308,6 +306,52 @@
                 alert('网络错误，请稍后再试');
             });
         }
+
+        // 提交评价 (AJAX)
+        document.addEventListener('DOMContentLoaded', function() {
+            const reviewForm = document.getElementById('review-form');
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(reviewForm);
+                    const productId = <?= $productId ?>;
+                    
+                    fetch(`/product/${productId}/review`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        const messageDiv = document.getElementById('review-message');
+                        messageDiv.style.display = 'block';
+                        
+                        if (data.success) {
+                            messageDiv.className = 'alert alert-success';
+                            messageDiv.textContent = data.message;
+                            
+                            // 清空表单
+                            reviewForm.style.display = 'none';
+                            
+                            // 刷新页面以显示新评价
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            messageDiv.className = 'alert alert-info';
+                            messageDiv.textContent = data.message;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        const messageDiv = document.getElementById('review-message');
+                        messageDiv.style.display = 'block';
+                        messageDiv.className = 'alert alert-info';
+                        messageDiv.textContent = '网络错误，请稍后重试';
+                    });
+                });
+            }
+        });
     </script>
     
     <style>

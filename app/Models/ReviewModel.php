@@ -7,9 +7,17 @@ class ReviewModel extends BaseModel {
     protected $fillable = ['user_id', 'product_id', 'order_id', 'rating', 'content', 'status'];
 
     /**
-     * 获取商品的评价列表
+     * 添加评价
      */
-    public function getProductReviews($productId, $page = 1, $perPage = 10) {
+    public function addReview($userId, $productId, $orderId, $rating, $content) {
+        $sql = "INSERT INTO {$this->table} (user_id, product_id, order_id, rating, content) VALUES (?, ?, ?, ?, ?)";
+        return $this->execute($sql, [$userId, $productId, $orderId, $rating, $content]);
+    }
+    
+    /**
+     * 获取商品的评价列表（包含用户头像和用户名）
+     */
+    public function getReviewsByProduct($productId, $page = 1, $perPage = 10) {
         $offset = ($page - 1) * $perPage;
         $sql = "SELECT r.*, u.username, u.avatar 
                 FROM {$this->table} r 
@@ -19,6 +27,14 @@ class ReviewModel extends BaseModel {
                 LIMIT ?, ?";
         return $this->fetchAll($sql, [$productId, $offset, $perPage]);
     }
+    
+    /**
+     * 检查用户是否已经对该订单做过评价
+     */
+    public function hasReviewed($orderId) {
+        $sql = "SELECT id FROM {$this->table} WHERE order_id = ?";
+        return !empty($this->fetch($sql, [$orderId]));
+    }
 
     /**
      * 获取商品评价总数
@@ -27,29 +43,6 @@ class ReviewModel extends BaseModel {
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE product_id = ? AND status = 1";
         $result = $this->fetch($sql, [$productId]);
         return $result ? (int)$result['total'] : 0;
-    }
-
-    /**
-     * 创建评价
-     */
-    public function createReview($userId, $productId, $orderId, $rating, $content) {
-        $data = [
-            'user_id' => $userId,
-            'product_id' => $productId,
-            'order_id' => $orderId,
-            'rating' => max(1, min(5, $rating)),
-            'content' => $content,
-            'status' => 1
-        ];
-        return $this->create($data);
-    }
-
-    /**
-     * 检查订单是否已评价
-     */
-    public function hasReviewedOrder($orderId) {
-        $sql = "SELECT id FROM {$this->table} WHERE order_id = ?";
-        return $this->fetch($sql, [$orderId]) !== false;
     }
 
     /**

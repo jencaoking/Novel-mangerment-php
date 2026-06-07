@@ -399,9 +399,6 @@ class AdminController
         $pageTitle = '评价管理';
         $currentPage = 'reviews';
         
-        // 确保搜索变量传递给视图
-        $search = $search;
-        
         require __DIR__ . '/../../views/admin/reviews.phtml';
     }
 

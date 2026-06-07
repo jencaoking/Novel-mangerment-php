@@ -93,11 +93,6 @@ class ProductModel extends BaseModel {
         return $this->execute($sql, [$id]);
     }
 
-    public function incrementSales($id) {
-        $sql = "UPDATE {$this->table} SET sales = sales + 1 WHERE id = ?";
-        return $this->execute($sql, [$id]);
-    }
-
     public function getAllProducts($page = 1, $perPage = 10) {
         $sql = $this->buildBaseQuery() . " ORDER BY p.create_time DESC";
         $params = [];
@@ -126,9 +121,10 @@ class ProductModel extends BaseModel {
         }
 
         if ($search) {
+            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
         }
 
         $sql .= " ORDER BY p.create_time DESC";
@@ -147,9 +143,10 @@ class ProductModel extends BaseModel {
         }
 
         if ($search) {
+            $search = str_replace(['%', '_'], ['\%', '\_'], $search);
             $sql .= " AND (p.title LIKE ? OR p.author LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+            $params[] = "%{$search}%";
+            $params[] = "%{$search}%";
         }
 
         $result = $this->fetch($sql, $params);

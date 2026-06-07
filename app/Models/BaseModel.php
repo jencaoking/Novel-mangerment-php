@@ -99,12 +99,25 @@ class BaseModel {
             return false; 
         }
 
+        // 对所有列名进行注入校验
+        foreach (array_keys($data) as $column) {
+            if (!$this->validateColumn($column)) {
+                return false;
+            }
+        }
+
         $columns = implode(", ", array_keys($data));
         $placeholders = ":" . implode(", :", array_keys($data));
         
+        // 统一具名占位符格式，确保键名带冒号
+        $namedData = [];
+        foreach ($data as $k => $v) {
+            $namedData[':' . $k] = $v;
+        }
+        
         $sql = "INSERT INTO {$this->table} ({$columns}) VALUES ({$placeholders})";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($data);
+        $stmt->execute($namedData);
         
         return $this->pdo->lastInsertId();
     }
@@ -120,6 +133,13 @@ class BaseModel {
         // ✅ 新增：空数据校验
         if (empty($data)) {
             return false;
+        }
+
+        // 对所有列名进行注入校验
+        foreach (array_keys($data) as $column) {
+            if (!$this->validateColumn($column)) {
+                return false;
+            }
         }
 
         $updateParts = [];
@@ -192,11 +212,8 @@ class BaseModel {
         $parts = explode(',', $orderBy);
         foreach ($parts as $part) {
             $part = trim($part);
-            $direction = '';
-            if (preg_match('/\s+(ASC|DESC)$/i', $part, $matches)) {
-                $direction = $matches[1];
-                $part = trim(str_replace($direction, '', $part));
-            }
+            // 使用正则从末尾精确剥离方向词，避免误替换列名中的子串
+            $part = trim(preg_replace('/\s+(ASC|DESC)$/i', '', $part));
             if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $part)) {
                 return false;
             }

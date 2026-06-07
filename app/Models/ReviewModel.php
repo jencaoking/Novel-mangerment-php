@@ -26,7 +26,7 @@ class ReviewModel extends BaseModel {
     public function getProductReviewCount($productId) {
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE product_id = ? AND status = 1";
         $result = $this->fetch($sql, [$productId]);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     /**

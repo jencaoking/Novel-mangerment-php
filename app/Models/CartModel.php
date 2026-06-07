@@ -43,7 +43,7 @@ class CartModel extends BaseModel {
     public function getUserCartCount($userId) {
         $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE user_id = ?";
         $result = $this->fetch($sql, [$userId]);
-        return $result['total'];
+        return $result ? (int)$result['total'] : 0;
     }
 
     public function isInCart($userId, $productId) {

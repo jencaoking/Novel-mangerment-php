@@ -1,6 +1,7 @@
 <?php require __DIR__ . '/../_header.phtml'; ?>
 
 <section class="cart-page-section">
+    <input type="hidden" id="csrf_token" value="<?= generateCSRFToken() ?>">
     <div class="container">
         <nav class="breadcrumb" style="margin-bottom: 1.5rem;">
             <a href="/" class="breadcrumb-item">首页</a>
@@ -215,10 +216,10 @@
     </div>
 </div>
 
-<script src="/assets/js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
-let cartPayTimer = null;
+let alipayPayTimer = null;
+let wechatPayTimer = null;
 let currentBatchTradeNo = null;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -267,12 +268,12 @@ function initCartFunctions() {
     });
 }
 
-function toggleSelectAll() {
+function toggleSelectAll(event) {
     const selectAllTop = document.getElementById('selectAll');
     const selectAllBottom = document.getElementById('selectAllBottom');
     const checkboxes = document.querySelectorAll('.product-checkbox');
     
-    const isChecked = selectAllTop.checked || selectAllBottom.checked;
+    const isChecked = event.target.checked;
     
     selectAllTop.checked = isChecked;
     selectAllBottom.checked = isChecked;
@@ -294,7 +295,7 @@ function updateSummary() {
         const item = document.querySelector(`.cart-item-card[data-product-id="${productId}"]`);
         if (item) {
             const priceElement = item.querySelector('.price-value');
-            const priceText = priceElement.textContent.replace('¥', '').replace(',', '');
+            const priceText = priceElement.textContent.replace('¥', '').replace(/,/g, '');
             totalPrice += parseFloat(priceText);
             selectedCount++;
         }
@@ -322,10 +323,11 @@ async function removeItem(productId) {
     }
     
     try {
+        const csrfToken = document.getElementById('csrf_token').value;
         const response = await fetch('/api/cart/remove', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `product_id=${productId}`
+            body: `product_id=${productId}&csrf_token=${encodeURIComponent(csrfToken)}`
         });
         const data = await response.json();
         
@@ -363,9 +365,11 @@ async function clearCart() {
     }
     
     try {
+        const csrfToken = document.getElementById('csrf_token').value;
         const response = await fetch('/api/cart/clear', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `csrf_token=${encodeURIComponent(csrfToken)}`
         });
         const data = await response.json();
         
@@ -389,6 +393,7 @@ async function checkout() {
     }
 
     const paymentChannel = document.querySelector('input[name="payment_channel"]:checked').value;
+    const csrfToken = document.getElementById('csrf_token').value;
 
     try {
         const productIds = Array.from(checkboxes).map(cb => cb.value);
@@ -397,6 +402,7 @@ async function checkout() {
             formData.append('product_ids[]', id);
         });
         formData.append('payment_channel', paymentChannel);
+        formData.append('csrf_token', csrfToken);
 
         const response = await fetch('/api/checkout/cart', {
             method: 'POST',
@@ -477,14 +483,15 @@ function showWechatPayModal(amount, codeUrl, batchTradeNo) {
 
     if (codeUrl) {
         // 使用 qrcode.js 生成二维码
-        QRCode.toCanvas(codeUrl, {
+        const canvas = document.createElement('canvas');
+        QRCode.toCanvas(canvas, codeUrl, {
             width: 200,
             margin: 2,
             color: {
                 dark: '#000000',
                 light: '#ffffff'
             }
-        }, function(error, canvas) {
+        }, function(error) {
             qrcodeLoading.classList.add('hidden');
             if (error) {
                 console.error(error);
@@ -511,7 +518,7 @@ function closeWechatPayModal() {
 function startWechatPaymentPolling(batchTradeNo) {
     stopWechatPaymentPolling();
 
-    cartPayTimer = setInterval(async () => {
+    wechatPayTimer = setInterval(async () => {
         try {
             const response = await fetch(`/api/order/status?batch_trade_no=${encodeURIComponent(batchTradeNo)}`);
             const data = await response.json();
@@ -536,16 +543,16 @@ function startWechatPaymentPolling(batchTradeNo) {
 }
 
 function stopWechatPaymentPolling() {
-    if (cartPayTimer) {
-        clearInterval(cartPayTimer);
-        cartPayTimer = null;
+    if (wechatPayTimer) {
+        clearInterval(wechatPayTimer);
+        wechatPayTimer = null;
     }
 }
 
 function startPaymentPolling(batchTradeNo) {
     stopPaymentPolling();
     
-    cartPayTimer = setInterval(async () => {
+    alipayPayTimer = setInterval(async () => {
         try {
             const response = await fetch(`/api/order/status?batch_trade_no=${encodeURIComponent(batchTradeNo)}`);
             const data = await response.json();
@@ -570,14 +577,15 @@ function startPaymentPolling(batchTradeNo) {
 }
 
 function stopPaymentPolling() {
-    if (cartPayTimer) {
-        clearInterval(cartPayTimer);
-        cartPayTimer = null;
+    if (alipayPayTimer) {
+        clearInterval(alipayPayTimer);
+        alipayPayTimer = null;
     }
 }
 
 window.addEventListener('beforeunload', function() {
     stopPaymentPolling();
+    stopWechatPaymentPolling();
 });
 </script>
 

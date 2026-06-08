@@ -26,10 +26,27 @@
                                 <i class="bi bi-check-circle-fill"></i>
                                 <span><?= e($success) ?></span>
                             </div>
-                            <script>setTimeout(function() { window.location.href = '/login'; }, 3000);</script>
+                            <script>
+                                setTimeout(function() { window.location.href = '/login'; }, 3000);
+                                // 页面加载完成后禁用表单
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const form = document.getElementById('registerForm');
+                                    if (form) {
+                                        form.disabled = true;
+                                        const inputs = form.querySelectorAll('input, button');
+                                        inputs.forEach(input => input.disabled = true);
+                                        const submitBtn = form.querySelector('button[type="submit"]');
+                                        if (submitBtn) {
+                                            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i> 注册成功';
+                                            submitBtn.classList.remove('btn-primary');
+                                            submitBtn.classList.add('btn-success');
+                                        }
+                                    }
+                                });
+                            </script>
                         <?php endif; ?>
                         
-                        <form method="POST" action="/register">
+                        <form method="POST" action="/register" id="registerForm">
                             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                             
                             <div class="mb-4">
@@ -76,7 +93,7 @@
                                 </div>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
                                 <i class="bi bi-person-plus me-2"></i> 创建账户
                             </button>
                         </form>

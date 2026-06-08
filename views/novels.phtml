@@ -1,6 +1,7 @@
 <?php require __DIR__ . '/_header.phtml'; ?>
 
 <section class="products-page">
+    <input type="hidden" id="csrf_token" value="<?= generateCSRFToken() ?>">
     <div class="container">
         <!-- 页面标题区 -->
         <div class="page-header-section">
@@ -63,8 +64,8 @@
                 <?php foreach ($novels as $index => $novel): ?>
                     <div class="product-card animate-ready" style="animation-delay: <?= $index * 0.05 ?>s">
                         <div class="product-image-wrapper">
-                            <img src="/uploads/cover/<?= e($novel['cover']) ?>" 
-                                 alt="<?= e($novel['title']) ?>" 
+                            <img src="/uploads/cover/<?= e($novel['cover'] ?: 'default.jpg') ?>"
+                                 alt="<?= e($novel['title']) ?>"
                                  class="product-image"
                                  loading="lazy">
                             <div class="product-hover-overlay">
@@ -101,7 +102,7 @@
                                 <span class="product-price">
                                     <span class="price-symbol">¥</span><?= number_format($novel['price'], 2) ?>
                                 </span>
-                                <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); addToCart(<?= $novel['id'] ?>)">
+                                <button class="btn btn-secondary btn-icon" onclick="event.stopPropagation(); addToCart(<?= $novel['id'] ?>, this)">
                                     <i class="bi bi-cart-plus"></i>
                                 </button>
                             </div>
@@ -194,12 +195,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-async function addToCart(productId) {
+async function addToCart(productId, btn) {
+    const originalHTML = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
     try {
+        const csrfToken = document.getElementById('csrf_token').value;
         const response = await fetch('/api/cart/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `product_id=${productId}`
+            body: `product_id=${productId}&csrf_token=${encodeURIComponent(csrfToken)}`
         });
         const data = await response.json();
         
@@ -212,6 +219,9 @@ async function addToCart(productId) {
     } catch (err) {
         console.error(err);
         showNotification('网络错误，请稍后再试', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
     }
 }
 </script>

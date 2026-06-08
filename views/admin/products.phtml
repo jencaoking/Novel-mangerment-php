@@ -56,7 +56,7 @@
                     <td><?= $product['id'] ?></td>
                     <td>
                         <?php $safeCover = basename($product['cover']); ?>
-                        <img src="/uploads/cover/<?= e($safeCover) ?>" class="product-thumb" alt="<?= e($product['title']) ?>">
+                        <img src="/uploads/cover/<?= e($safeCover ?: 'default.jpg') ?>" class="product-thumb" alt="<?= e($product['title']) ?>">
                     </td>
                     <td><?= e($product['title']) ?></td>
                     <td>

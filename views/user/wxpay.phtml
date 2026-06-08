@@ -89,14 +89,15 @@ function generateQrcode() {
         return;
     }
 
-    QRCode.toCanvas(codeUrl, {
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, codeUrl, {
         width: 250,
         margin: 2,
         color: {
             dark: '#000000',
             light: '#ffffff'
         }
-    }, function(error, canvas) {
+    }, function(error) {
         qrcodeLoading.classList.add('hidden');
         if (error) {
             console.error(error);
@@ -122,12 +123,18 @@ function startPaymentPolling() {
 
     payTimer = setInterval(async () => {
         try {
-            const response = await fetch('/api/order/<?php echo $order['id'] ?? 0; ?>');
+            const response = await fetch(`/api/order/status?batch_trade_no=${encodeURIComponent(orderNo)}`);
             const data = await response.json();
 
-            if (data.success && data.status === 'paid') {
-                stopPaymentPolling();
-                showPaymentSuccess();
+            if (data.success) {
+                const statusEl = document.getElementById('wxpayStatus');
+                
+                if (data.status === 'paid') {
+                    stopPaymentPolling();
+                    showPaymentSuccess();
+                } else if (data.status === 'partial_paid') {
+                    statusEl.innerHTML = '<div class="status-waiting"><i class="bi bi-clock-history"></i><span>部分订单已支付，请稍候...</span></div>';
+                }
             }
         } catch (err) {
             console.error('支付状态查询失败:', err);

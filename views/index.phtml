@@ -31,7 +31,7 @@
             <?php foreach ($novels as $item): ?>
                 <div class="product-card animate-ready">
                     <div class="product-image-wrapper">
-                        <img src="/uploads/cover/<?= htmlspecialchars($item['cover']) ?>" 
+                        <img src="/uploads/cover/<?= htmlspecialchars($item['cover'] ?: 'default.jpg') ?>"
                              class="product-image" 
                              alt="<?= htmlspecialchars($item['title']) ?>"
                              loading="lazy">
@@ -76,7 +76,7 @@
             <?php foreach ($music as $item): ?>
                 <div class="product-card animate-ready">
                     <div class="product-image-wrapper" style="aspect-ratio: 1/1;">
-                        <img src="/uploads/cover/<?= htmlspecialchars($item['cover']) ?>" 
+                        <img src="/uploads/cover/<?= htmlspecialchars($item['cover'] ?: 'default.jpg') ?>"
                              class="product-image" 
                              alt="<?= htmlspecialchars($item['title']) ?>"
                              loading="lazy">

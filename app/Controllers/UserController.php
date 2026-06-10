@@ -119,30 +119,40 @@ class UserController
                 $confirmPassword = $_POST['confirm_password'] ?? '';
 
                 $user = $this->getUser();
+                $mustChange = $this->userModel->mustChangePassword($user['id']);
 
                 // 2. 表单基础验证
-                if (empty($oldPassword) || empty($newPassword) || empty($confirmPassword)) {
-                    $_SESSION['error'] = '请填写所有密码字段';
-                } elseif (!password_verify($oldPassword, $user['password'])) {
-                    // 3. 验证原密码是否正确
+                if (empty($newPassword) || empty($confirmPassword)) {
+                    $_SESSION['error'] = '请填写新密码和确认密码';
+                } elseif (!$mustChange && empty($oldPassword)) {
+                    // 非强制改密场景下, 必须填原密码
+                    $_SESSION['error'] = '请填写原密码';
+                } elseif (!$mustChange && !password_verify($oldPassword, $user['password'])) {
+                    // 3. 验证原密码是否正确（非强制场景）
                     $_SESSION['error'] = '原密码不正确';
                 } elseif (strlen($newPassword) < 6) {
                     $_SESSION['error'] = '新密码至少需要6个字符';
+                } elseif ($newPassword === ($mustChange ? '' : $oldPassword)) {
+                    $_SESSION['error'] = '新密码不能与原密码相同';
                 } elseif ($newPassword !== $confirmPassword) {
                     $_SESSION['error'] = '两次输入的新密码不一致';
                 } else {
                     // 4. 加密新密码并更新到数据库
                     $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
-                    
+
                     if ($this->userModel->update($user['id'], ['password' => $hashedPassword])) {
-                        $_SESSION['success'] = '密码修改成功！下次登录请使用新密码。';
+                        // 5. 成功后清除"强制改密"标记（如果存在）
+                        $this->userModel->clearMustChangePassword($user['id']);
+                        $_SESSION['success'] = $mustChange
+                            ? '密码修改成功！现在您可以使用平台的全部功能了。'
+                            : '密码修改成功！下次登录请使用新密码。';
                     } else {
                         $_SESSION['error'] = '密码修改失败，请稍后再试';
                     }
                 }
             }
         }
-        
+
         // 完成后重定向回个人资料页，提示信息会在页面顶部显示
         redirect('/user/profile');
     }

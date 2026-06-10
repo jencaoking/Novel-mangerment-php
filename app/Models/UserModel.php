@@ -4,12 +4,44 @@ namespace App\Models;
 class UserModel extends BaseModel {
     protected $table = 'users';
     protected $primaryKey = 'id';
-    protected $fillable = ['username', 'email', 'password', 'avatar', 'role', 'status', 'last_login', 'remember_token', 'remember_token_expire'];
+    protected $fillable = ['username', 'email', 'password', 'avatar', 'role', 'status', 'must_change_password', 'last_login', 'remember_token', 'remember_token_expire'];
     protected $hidden = ['password', 'remember_token', 'remember_token_expire'];
 
     public function findByUsernameOrEmail($username) {
         $sql = "SELECT * FROM {$this->table} WHERE (username = ? OR email = ?) AND status = 1";
         return $this->fetch($sql, [$username, $username]);
+    }
+
+    /**
+     * 是否必须修改密码（首次登录 / 管理员重置密码后的强制改密）
+     * @return bool true 表示需要强制改密
+     */
+    public function mustChangePassword($userId): bool
+    {
+        $user = $this->find($userId);
+        if (!$user) {
+            return false;
+        }
+        return (int)($user['must_change_password'] ?? 0) === 1;
+    }
+
+    /**
+     * 设置"必须修改密码"标记
+     * @param int $userId 用户 ID
+     * @param bool $must  true=开启, false=关闭
+     */
+    public function setMustChangePassword($userId, bool $must = true): bool
+    {
+        $sql = "UPDATE {$this->table} SET must_change_password = ? WHERE id = ?";
+        return $this->execute($sql, [$must ? 1 : 0, $userId]) !== false;
+    }
+
+    /**
+     * 清除强制改密标记（修改密码成功后调用）
+     */
+    public function clearMustChangePassword($userId): bool
+    {
+        return $this->setMustChangePassword($userId, false);
     }
 
     public function findByUsername($username) {

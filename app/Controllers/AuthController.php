@@ -42,6 +42,13 @@ class AuthController
                         $redirectUrl = $_SESSION['redirect_url'] ?? null;
                         unset($_SESSION['redirect_url']);
 
+                        // 强制改密拦截：标记位置为 1 时，无论想去哪都先去改密页
+                        $mustChange = (int)($result['user']['must_change_password'] ?? 0) === 1;
+                        if ($mustChange) {
+                            $_SESSION['info'] = '为了您的账户安全，登录后必须先修改密码。';
+                            redirect('/user/profile#change-password');
+                        }
+
                         if (!$redirectUrl && $result['user']['role'] === 'admin') {
                             redirect('/admin/dashboard');
                         }

@@ -205,6 +205,46 @@ function requireLogin() {
     }
 }
 
+/**
+ * 强制改密守卫
+ * 如果当前用户被标记为必须修改密码, 拒绝访问当前请求,
+ * 重定向到改密页(带锚点,前端可滚动到改密表单)。
+ *
+ * 放行的白名单:
+ *   - /user/profile       个人资料页(含改密表单)
+ *   - /user/change-password  改密处理
+ *   - /logout             退出登录
+ *
+ * 注意: 实际拦截逻辑在 App\Middleware\AuthMiddleware 里,
+ * 这里保留函数作为控制器内显式调用的入口(如有需要)。
+ */
+function requirePasswordChanged(): void {
+    $userId = getCurrentUserId();
+    if (!$userId) {
+        return;
+    }
+
+    $userModel = new UserModel();
+    if (!$userModel->mustChangePassword($userId)) {
+        return;
+    }
+
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+    $whitelist = [
+        '/user/profile',
+        '/user/change-password',
+        '/logout',
+    ];
+    foreach ($whitelist as $allow) {
+        if ($currentPath === $allow || strpos($currentPath, $allow . '?') === 0) {
+            return;
+        }
+    }
+
+    $_SESSION['info'] = '为了您的账户安全, 登录后必须先修改密码才能使用其他功能。';
+    redirect('/user/profile#change-password');
+}
+
 function requireAdmin() {
     if (!isLoggedIn() || !isAdmin()) {
         // 过滤 REQUEST_URI，只允许站内路径

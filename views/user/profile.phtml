@@ -38,11 +38,25 @@
                         <span><?= e($error) ?></span>
                     </div>
                 <?php endif; ?>
-                
+
                 <?php if (isset($success) && $success): ?>
                     <div class="alert alert-success d-flex align-items-center gap-2 mb-4" role="alert">
                         <i class="bi bi-check-circle-fill"></i>
                         <span><?= e($success) ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <?php
+                // 强制改密横幅: 当 must_change_password=1 时显示
+                $mustChangePwd = !empty($user['must_change_password']);
+                ?>
+                <?php if ($mustChangePwd): ?>
+                    <div class="alert alert-warning d-flex align-items-start gap-2 mb-4" role="alert">
+                        <i class="bi bi-shield-exclamation" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>您必须修改密码后才能使用其他功能</strong>
+                            <div class="small mt-1">系统检测到您的账户使用默认或临时密码, 请在下方"修改密码"卡片中设置新密码。完成后该提示会自动消失。</div>
+                        </div>
                     </div>
                 <?php endif; ?>
 
@@ -89,18 +103,25 @@
                     </div>
                 </div>
 
-                <div class="card shadow-sm border-0">
+                <div class="card shadow-sm border-0" id="change-password">
                     <div class="card-header bg-white border-bottom text-danger">
                         <h5 class="mb-0 py-2"><i class="bi bi-shield-lock me-1"></i> 修改密码</h5>
                     </div>
                     <div class="card-body p-4">
-                        <form action="/user/change-password" method="POST">
+                        <form action="/user/change-password" method="POST" autocomplete="off">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCSRFToken()) ?>">
 
+                            <?php if (empty($user['must_change_password'])): ?>
                             <div class="mb-3">
                                 <label for="old_password" class="form-label fw-bold">原密码</label>
                                 <input type="password" class="form-control" id="old_password" name="old_password" required placeholder="请输入当前使用的密码">
                             </div>
+                            <?php else: ?>
+                            <div class="alert alert-info py-2 small mb-3" role="alert">
+                                <i class="bi bi-info-circle me-1"></i>
+                                您正在使用初始密码, 无需填写"原密码", 直接设置新密码即可。
+                            </div>
+                            <?php endif; ?>
 
                             <div class="row mb-4">
                                 <div class="col-md-6">

@@ -3,7 +3,7 @@
     "description": "小说与音乐数字内容销售平台",
     "type": "project",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.2",
         "vlucas/phpdotenv": "^5.5",
         "resend/resend-php": "*",
         "sentry/sentry": "^4.27",
@@ -13,11 +13,14 @@
         "psr-4": {
             "App\\": "app/",
             "Core\\": "core/"
-        }
+        },
+        "files": [
+            "includes/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Models\\": "app/Models/"
+            "App\\Tests\\": "tests/"
         }
     }
 }

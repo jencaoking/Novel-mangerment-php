@@ -132,7 +132,7 @@ BookMusic Mall 是一个基于 PHP 开发的小说与音乐数字内容销售平
    - 默认管理员账户：
      - 用户名：`admin`
      - 密码：`admin123`
-   - **请登录后立即修改默认密码**
+   - **🔒 首次登录强制改密**: 系统会在首次登录时强制跳转到"个人资料"页, 必须修改密码才能使用其他功能。该机制由 `users.must_change_password` 字段实现, 详见下方"安全建议"章节。
 
 ## 目录结构
 
@@ -204,13 +204,17 @@ bookmusic/
 
 ## 安全建议
 
-1. **修改默认密码**：立即修改管理员默认密码
-2. **配置HTTPS**：生产环境必须使用HTTPS
-3. **配置支付宝密钥**：填写真实的支付宝APP_ID和密钥（见PAYMENT_README.md）
-4. **配置Resend API Key**：设置邮件服务的API密钥（见RESEND_README.md）
-5. **定期备份**：定期备份数据库和上传文件
-6. **文件权限**：确保上传目录不可执行 PHP
-7. **更新维护**：定期更新 PHP 和 MySQL 版本
+1. **🔒 首次登录强制改密**：`users` 表带 `must_change_password` 字段，默认 `admin` 账号被设为 1。`AuthMiddleware` 会拦截所有受保护路由，仅放行 `/user/profile`、`/user/change-password`、`/logout` 三个白名单，直到用户修改密码为止。修改成功后标记自动清零。
+   - 已部署的历史库执行迁移：`mysql -u root -p bookmusic_mall < database/database_update_must_change_password.sql`
+   - 想重置某用户的强制改密：`UPDATE users SET must_change_password = 1 WHERE username = 'admin';`
+   - 想取消某用户的强制改密：`UPDATE users SET must_change_password = 0 WHERE id = ?;`
+2. **修改默认密码**：立即修改管理员默认密码（首次登录会被强制要求）
+3. **配置HTTPS**：生产环境必须使用HTTPS
+4. **配置支付宝密钥**：填写真实的支付宝APP_ID和密钥（见PAYMENT_README.md）
+5. **配置Resend API Key**：设置邮件服务的API密钥（见RESEND_README.md）
+6. **定期备份**：定期备份数据库和上传文件
+7. **文件权限**：确保上传目录不可执行 PHP
+8. **更新维护**：定期更新 PHP 和 MySQL 版本
 
 ## 开发说明
 

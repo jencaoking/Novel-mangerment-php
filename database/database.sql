@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     avatar VARCHAR(255) DEFAULT NULL,
     role ENUM('user', 'admin') DEFAULT 'user',
     status TINYINT DEFAULT 1 COMMENT '1-正常 0-封禁',
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1-必须修改密码(强制), 0-正常',
     last_login DATETIME DEFAULT NULL,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -108,9 +109,10 @@ INSERT INTO categories (name, type, sort_order) VALUES
 ('嘻哈', 'music', 6);
 
 -- 插入默认管理员账户
--- 用户名: admin, 密码: admin123 (请登录后立即修改)
-INSERT INTO users (username, email, password, role, status) VALUES 
-('admin', 'admin@bookmusic.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEaGbRo.eW/ug1c4.5MvNlKlO9iK', 'admin', 1);
+-- 用户名: admin, 密码: admin123
+-- ⚠️ 已开启强制改密: 首次登录后系统会强制跳转改密页, 必须改完才能使用其他功能
+INSERT INTO users (username, email, password, role, status, must_change_password) VALUES
+('admin', 'admin@bookmusic.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEaGbRo.eW/ug1c4.5MvNlKlO9iK', 'admin', 1, 1);
 
 -- 插入示例商品数据
 INSERT INTO products (title, type, category_id, author, description, cover, file_path, price, status) VALUES 

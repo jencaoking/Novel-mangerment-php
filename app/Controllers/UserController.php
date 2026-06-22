@@ -3,18 +3,22 @@ namespace App\Controllers;
 
 use App\Models\UserModel;
 use App\Models\OrderModel;
+use App\Models\FavoriteModel;
 
 class UserController
 {
     protected $userModel;
     protected $orderModel;
+    protected $favoriteModel;
 
     public function __construct(
         UserModel $userModel,
-        OrderModel $orderModel
+        OrderModel $orderModel,
+        FavoriteModel $favoriteModel
     ) {
         $this->userModel = $userModel;
         $this->orderModel = $orderModel;
+        $this->favoriteModel = $favoriteModel;
     }
 
     private function getUser()
@@ -145,5 +149,22 @@ class UserController
         
         // 完成后重定向回个人资料页，提示信息会在页面顶部显示
         redirect('/user/profile');
+    }
+
+    /**
+     * 我的收藏
+     */
+    public function favorites()
+    {
+        $userId = getCurrentUserId();
+        $user = $this->getUser();
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 12;
+
+        $total = $this->favoriteModel->getUserFavoritesCount($userId);
+        $pagination = paginate($total, $page, $perPage);
+        $favorites = $this->favoriteModel->getUserFavorites($userId, $page, $perPage);
+
+        require __DIR__ . '/../../views/user/favorites.phtml';
     }
 }

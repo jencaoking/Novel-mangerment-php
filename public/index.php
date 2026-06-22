@@ -128,6 +128,12 @@ try {
     $router->post('/api/cart/remove', 'CartController@remove', ['AuthMiddleware']);
     $router->post('/api/cart/clear', 'CartController@clear', ['AuthMiddleware']);
     $router->post('/api/checkout/cart', 'PaymentController@checkoutCart', ['AuthMiddleware']);
+
+    // ==========================================
+    // 2.7 收藏模块路由
+    // ==========================================
+    $router->post('/api/favorite/toggle', 'ProductController@toggleFavorite', ['AuthMiddleware']);
+    $router->get('/user/favorites', 'UserController@favorites', ['AuthMiddleware']);
     
     // ==========================================
     // 2.7 批次订单状态查询路由

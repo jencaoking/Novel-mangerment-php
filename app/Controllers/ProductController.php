@@ -6,6 +6,7 @@ use App\Models\CategoryModel;
 use App\Models\OrderModel;
 use App\Models\DownloadModel;
 use App\Models\ReviewModel;
+use App\Models\FavoriteModel;
 
 class ProductController {
     
@@ -14,19 +15,22 @@ class ProductController {
     protected $orderModel;
     protected $downloadModel;
     protected $reviewModel;
+    protected $favoriteModel;
 
     public function __construct(
         ProductModel $productModel,
         CategoryModel $categoryModel,
         OrderModel $orderModel,
         DownloadModel $downloadModel,
-        ReviewModel $reviewModel
+        ReviewModel $reviewModel,
+        FavoriteModel $favoriteModel
     ) {
         $this->productModel = $productModel;
         $this->categoryModel = $categoryModel;
         $this->orderModel = $orderModel;
         $this->downloadModel = $downloadModel;
         $this->reviewModel = $reviewModel;
+        $this->favoriteModel = $favoriteModel;
     }
     
     public function novels() {
@@ -73,12 +77,13 @@ class ProductController {
         $hasPurchased = false;
         $paidOrder = null;
         $hasReviewed = false;
+        $isFavorited = false;
         
         if (isLoggedIn()) {
             $userId = getCurrentUserId();
             $hasPurchased = $this->orderModel->hasPurchased($userId, $productId);
+            $isFavorited = $this->favoriteModel->isFavorited($userId, $productId);
             
-            // 如果购买过，获取订单信息，检查是否已评价
             if ($hasPurchased) {
                 $paidOrder = $this->orderModel->getPaidOrder($userId, $productId);
                 if ($paidOrder) {
@@ -87,7 +92,6 @@ class ProductController {
             }
         }
 
-        // 获取当前商品的评价列表
         $reviews = $this->reviewModel->getReviewsByProduct($productId, 1, 10);
         $reviewCount = $this->reviewModel->getProductReviewCount($productId);
         $ratingDistribution = $this->reviewModel->getRatingDistribution($productId);
@@ -270,5 +274,43 @@ class ProductController {
         flush();
         readfile($filePath);
         exit;
+    }
+
+    /**
+     * 切换收藏状态 (AJAX)
+     */
+    public function toggleFavorite() {
+        header('Content-Type: application/json');
+
+        if (!isLoggedIn()) {
+            echo json_encode(['success' => false, 'message' => '请先登录', 'need_login' => true]);
+            return;
+        }
+
+        if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            echo json_encode(['success' => false, 'message' => '安全验证失败']);
+            return;
+        }
+
+        $productId = (int)($_POST['product_id'] ?? 0);
+        if ($productId <= 0) {
+            echo json_encode(['success' => false, 'message' => '无效的商品']);
+            return;
+        }
+
+        $product = $this->productModel->find($productId);
+        if (!$product) {
+            echo json_encode(['success' => false, 'message' => '商品不存在']);
+            return;
+        }
+
+        $userId = getCurrentUserId();
+        $isFavorited = $this->favoriteModel->toggle($userId, $productId);
+
+        echo json_encode([
+            'success' => true,
+            'favorited' => $isFavorited,
+            'message' => $isFavorited ? '已收藏' : '已取消收藏'
+        ]);
     }
 }

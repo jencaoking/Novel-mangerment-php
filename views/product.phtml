@@ -111,6 +111,13 @@
                             </button>
                         </form>
                     <?php endif; ?>
+                    
+                    <button type="button" class="btn-favorite <?= $isFavorited ? 'is-favorited' : '' ?>" 
+                            onclick="toggleFavorite(<?= $productId ?>, this)"
+                            title="<?= $isFavorited ? '取消收藏' : '收藏' ?>">
+                        <i class="bi bi-heart<?= $isFavorited ? '-fill' : '' ?>"></i>
+                        <span class="favorite-text"><?= $isFavorited ? '已收藏' : '收藏' ?></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -258,6 +265,44 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+async function toggleFavorite(productId, btn) {
+    const csrfToken = document.getElementById('csrf_token').value;
+    
+    try {
+        const response = await fetch('/api/favorite/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}&csrf_token=${encodeURIComponent(csrfToken)}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            const icon = btn.querySelector('i');
+            const text = btn.querySelector('.favorite-text');
+            
+            if (data.favorited) {
+                btn.classList.add('is-favorited');
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                text.textContent = '已收藏';
+            } else {
+                btn.classList.remove('is-favorited');
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                text.textContent = '收藏';
+            }
+            showNotification(data.message, 'success');
+        } else if (data.need_login) {
+            window.location.href = '/login';
+        } else {
+            showNotification(data.message || '操作失败', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('网络错误，请稍后再试', 'error');
+    }
+}
 
 async function addToCart(productId, btn) {
     const originalHTML = btn.innerHTML;
@@ -555,6 +600,38 @@ async function submitReview(event, productId) {
 
 .btn-block {
     width: 100%;
+}
+
+.btn-favorite {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    color: var(--color-gray-600);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-favorite:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.btn-favorite.is-favorited {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.btn-favorite i {
+    font-size: 1.1rem;
 }
 
 .purchase-status-badge {

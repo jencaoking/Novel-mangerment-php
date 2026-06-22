@@ -1,0 +1,271 @@
+<?php $pageTitle = '我的收藏'; ?>
+<?php require __DIR__ . '/../_header.phtml'; ?>
+
+<section class="user-center-section">
+    <div class="container">
+        <div class="user-layout">
+            <div class="user-sidebar">
+                <div class="user-info">
+                    <div class="user-avatar-circle">
+                        <i class="bi bi-person text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3><?= e($user['username']) ?></h3>
+                    <p><?= e($user['email']) ?></p>
+                </div>
+                <nav class="user-nav">
+                    <a href="/user">
+                        <i class="bi bi-speedometer2 me-2"></i> 概览
+                    </a>
+                    <a href="/user/orders">
+                        <i class="bi bi-receipt me-2"></i> 我的订单
+                    </a>
+                    <a href="/user/favorites" class="active">
+                        <i class="bi bi-heart me-2"></i> 我的收藏
+                    </a>
+                    <a href="/user/downloads">
+                        <i class="bi bi-download me-2"></i> 我的下载
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="user-content">
+                <h1 class="page-title">我的收藏</h1>
+                
+                <?php if (empty($favorites)): ?>
+                    <div class="empty-state">
+                        <i class="bi bi-heart" style="font-size: 3rem; color: var(--color-gray-300);"></i>
+                        <p>暂无收藏的商品</p>
+                        <a href="/novels" class="btn btn-primary" style="margin-top: 1rem;">去逛逛</a>
+                    </div>
+                <?php else: ?>
+                    <div class="favorites-grid">
+                        <?php foreach ($favorites as $fav): ?>
+                            <div class="favorite-card">
+                                <a href="/product/<?= $fav['product_id'] ?>" class="favorite-cover">
+                                    <img src="/uploads/cover/<?= e($fav['cover'] ?: 'default.jpg') ?>" 
+                                         alt="<?= e($fav['title']) ?>">
+                                    <span class="favorite-type type-<?= $fav['type'] ?>">
+                                        <?= $fav['type'] === 'novel' ? '小说' : '音乐' ?>
+                                    </span>
+                                </a>
+                                <div class="favorite-info">
+                                    <a href="/product/<?= $fav['product_id'] ?>" class="favorite-title">
+                                        <?= e($fav['title']) ?>
+                                    </a>
+                                    <p class="favorite-author">
+                                        <i class="bi bi-person"></i> <?= e($fav['author']) ?>
+                                    </p>
+                                    <div class="favorite-footer">
+                                        <span class="favorite-price"><?= formatPrice($fav['price']) ?></span>
+                                        <button class="btn-remove-favorite" 
+                                                onclick="toggleFavorite(<?= $fav['product_id'] ?>, this)"
+                                                title="取消收藏">
+                                            <i class="bi bi-heart-fill"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($pagination['total_pages'] > 1): ?>
+                        <div class="pagination-wrapper">
+                            <nav>
+                                <ul class="pagination">
+                                    <?php if ($pagination['has_previous']): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<?= $pagination['current_page'] - 1 ?>">
+                                                <i class="bi bi-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                    
+                                    <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
+                                        <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
+                                            <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                        </li>
+                                    <?php endfor; ?>
+                                    
+                                    <?php if ($pagination['has_next']): ?>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=<?= $pagination['current_page'] + 1 ?>">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
+                                </ul>
+                            </nav>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+.favorite-card {
+    background: var(--color-gray-50);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--color-gray-100);
+}
+
+.favorite-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.favorite-cover {
+    position: relative;
+    display: block;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+}
+
+.favorite-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.favorite-card:hover .favorite-cover img {
+    transform: scale(1.05);
+}
+
+.favorite-type {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+}
+
+.type-novel { background: var(--color-primary); }
+.type-music { background: #7c3aed; }
+
+.favorite-info {
+    padding: 1rem;
+}
+
+.favorite-title {
+    display: block;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    margin-bottom: 0.3rem;
+    text-decoration: none;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.favorite-title:hover {
+    color: var(--color-primary);
+}
+
+.favorite-author {
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+    margin-bottom: 0.5rem;
+}
+
+.favorite-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.favorite-price {
+    font-weight: 700;
+    color: var(--color-primary);
+    font-size: 1.1rem;
+}
+
+.btn-remove-favorite {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-remove-favorite:hover {
+    transform: scale(1.2);
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.pagination {
+    gap: 0.25rem;
+}
+
+.page-link {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-gray-200);
+    color: var(--color-gray-700);
+    padding: 0.5rem 0.8rem;
+}
+
+.page-item.active .page-link {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+@media (max-width: 576px) {
+    .favorites-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+</style>
+
+<input type="hidden" id="csrf_token" value="<?= generateCSRFToken() ?>">
+
+<script>
+async function toggleFavorite(productId, btn) {
+    const csrfToken = document.getElementById('csrf_token').value;
+    
+    try {
+        const response = await fetch('/api/favorite/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `product_id=${productId}&csrf_token=${encodeURIComponent(csrfToken)}`
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            if (!data.favorited) {
+                // 从列表中移除
+                const card = btn.closest('.favorite-card');
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+                setTimeout(() => card.remove(), 300);
+            }
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+</script>
+
+<?php require __DIR__ . '/../_footer.phtml'; ?>

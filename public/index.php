@@ -90,6 +90,12 @@ try {
     $router = new \Core\Router($container);
     
     // ==========================================
+    // 🛡️ 安全响应头（全局生效）
+    // ==========================================
+    $securityHeaders = new \App\Middleware\SecurityHeadersMiddleware();
+    $securityHeaders->handle();
+    
+    // ==========================================
     // 1. 前台公开路由（商品模块）
     // ==========================================
     $router->get('/', 'HomeController@index');

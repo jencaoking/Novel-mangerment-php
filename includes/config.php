@@ -75,5 +75,9 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.name', SESSION_NAME);
     ini_set('session.cookie_lifetime', SESSION_LIFETIME);
     ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_samesite', 'Lax');
+    // 在生产环境中启用以下设置（需要 HTTPS）
+    // ini_set('session.cookie_secure', 1);
 }
 ?>

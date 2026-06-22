@@ -10,6 +10,14 @@ if (file_exists(__DIR__ . '/install.lock')) {
     die('系统已安装！如需重新安装，请先删除 install.lock 文件。');
 }
 
+// 安全限制：仅允许从 localhost 访问
+$allowedIps = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+$clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+if (!in_array($clientIp, $allowedIps)) {
+    http_response_code(403);
+    die('安装脚本仅允许从本地访问');
+}
+
 // 检查配置文件是否存在
 $configPath = __DIR__ . '/includes/config.php';
 if (!file_exists($configPath)) {

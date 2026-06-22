@@ -1,6 +1,8 @@
 <?php
 namespace App\Controllers;
 
+require_once __DIR__ . '/../../includes/rate_limit.php';
+
 class AuthController
 {
     public function showLogin()
@@ -21,6 +23,16 @@ class AuthController
         $error = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // 速率限制：每 IP 每5分钟最多5次登录尝试
+            $rateKey = getRateLimitKey() . ':login';
+            $rateCheck = checkRateLimit($rateKey, 5, 300);
+            
+            if (!$rateCheck['allowed']) {
+                $error = '登录尝试过于频繁，请稍后再试（' . $rateCheck['retry_after'] . '秒）';
+                require __DIR__ . '/../../views/auth/login.phtml';
+                return;
+            }
+
             if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
                 $error = '安全验证失败，请刷新页面重试';
             } else {
@@ -36,9 +48,11 @@ class AuthController
                     unset($_SESSION['captcha']);
                 } else {
                     unset($_SESSION['captcha']);
+                    recordAttempt($rateKey);
                     $result = login($username, $password, $remember);
 
                     if ($result['success']) {
+                        clearRateLimit($rateKey);
                         $redirectUrl = $_SESSION['redirect_url'] ?? null;
                         unset($_SESSION['redirect_url']);
 
@@ -77,6 +91,16 @@ class AuthController
         $success = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // 速率限制：每 IP 每5分钟最多3次注册尝试
+            $rateKey = getRateLimitKey() . ':register';
+            $rateCheck = checkRateLimit($rateKey, 3, 300);
+            
+            if (!$rateCheck['allowed']) {
+                $error = '注册尝试过于频繁，请稍后再试（' . $rateCheck['retry_after'] . '秒）';
+                require __DIR__ . '/../../views/auth/register.phtml';
+                return;
+            }
+
             if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
                 $error = '安全验证失败，请刷新页面重试';
             } else {
@@ -100,9 +124,11 @@ class AuthController
                 } elseif ($password !== $confirmPassword) {
                     $error = '两次输入的密码不一致';
                 } else {
+                    recordAttempt($rateKey);
                     $result = register($username, $email, $password);
 
                     if ($result['success']) {
+                        clearRateLimit($rateKey);
                         $success = '注册成功！即将跳转到登录页面...';
                     } else {
                         $error = $result['message'];

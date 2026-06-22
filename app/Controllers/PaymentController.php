@@ -455,6 +455,10 @@ class PaymentController
             json_response(['success' => false, 'message' => '请先登录'], 401);
         }
 
+        if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
+            json_response(['success' => false, 'message' => '安全验证失败'], 403);
+        }
+
         $userId = getCurrentUserId();
 
         $productIds = isset($_POST['product_ids']) ? $_POST['product_ids'] : [];
@@ -486,8 +490,8 @@ class PaymentController
             $placeholders = implode(',', array_fill(0, count($productIds), '?'));
             $sql = "SELECT p.id, p.price, p.title, p.type
                     FROM cart c
-                    LEFT JOIN products p ON c.product_id = p.id
-                    WHERE c.user_id = ? AND c.product_id IN (" . $placeholders . ")";
+                    INNER JOIN products p ON c.product_id = p.id
+                    WHERE c.user_id = ? AND p.status = 1 AND c.product_id IN (" . $placeholders . ")";
 
             $params = array_merge([$userId], $productIds);
             $stmt = $db->prepare($sql);
@@ -496,6 +500,11 @@ class PaymentController
 
             if (empty($cartItems)) {
                 json_response(['success' => false, 'message' => '购物车中没有选中的商品']);
+            }
+
+            // 检查是否有商品被删除/下架
+            if (count($cartItems) < count($productIds)) {
+                json_response(['success' => false, 'message' => '部分商品已下架，请刷新购物车后重试']);
             }
 
             // 计算总金额（使用 BCMath 确保精度）

@@ -23,9 +23,16 @@ class CartController {
 
         $userId = getCurrentUserId();
         
+        // 清理已删除/下架商品的购物车记录
+        $this->cartModel->cleanOrphanedItems($userId);
+        
         $cartItems = $this->cartModel->getUserCart($userId);
         
         $totalPrice = array_sum(array_column($cartItems, 'price'));
+        
+        // 默认全选
+        $allSelected = !empty($cartItems);
+        $selectedIds = array_column($cartItems, 'product_id');
         
         $user = getCurrentUser();
         

@@ -32,10 +32,10 @@ class CartModel extends BaseModel {
     }
 
     public function getUserCart($userId) {
-        $sql = "SELECT c.*, p.title, p.type, p.price, p.cover 
+        $sql = "SELECT c.*, p.title, p.type, p.price, p.cover, p.status AS product_status
                 FROM {$this->table} c 
                 LEFT JOIN products p ON c.product_id = p.id 
-                WHERE c.user_id = ? 
+                WHERE c.user_id = ? AND p.id IS NOT NULL AND p.status = 1
                 ORDER BY c.create_time DESC";
         return $this->fetchAll($sql, [$userId]);
     }
@@ -49,5 +49,12 @@ class CartModel extends BaseModel {
     public function isInCart($userId, $productId) {
         $sql = "SELECT id FROM {$this->table} WHERE user_id = ? AND product_id = ?";
         return $this->fetch($sql, [$userId, $productId]) !== false;
+    }
+
+    public function cleanOrphanedItems($userId) {
+        $sql = "DELETE c FROM {$this->table} c 
+                LEFT JOIN products p ON c.product_id = p.id 
+                WHERE c.user_id = ? AND (p.id IS NULL OR p.status = 0)";
+        return $this->execute($sql, [$userId]);
     }
 }

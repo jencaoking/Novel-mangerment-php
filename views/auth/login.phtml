@@ -1,17 +1,17 @@
 <?php require __DIR__ . '/../_header.phtml'; ?>
 
-<section class="py-5" style="background: linear-gradient(180deg, var(--color-gray-50) 0%, var(--color-white) 100%); min-height: calc(100vh - 72px);">
+<section class="py-5" style="background: var(--color-bg-muted); min-height: calc(100dvh - var(--header-height));">
     <div class="container">
-        <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 200px);">
+        <div class="row justify-content-center align-items-center" style="min-height: calc(100dvh - 200px);">
             <div class="col-lg-5 col-md-7 col-sm-10">
-                <div class="card border-0 shadow-lg" style="border-radius: var(--radius-xl);">
+                <div class="card border-0 shadow-lg">
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
-                            <div class="mb-3" style="width: 80px; height: 80px; margin: 0 auto; background: var(--color-primary-gradient); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-person text-white" style="font-size: 2.5rem;"></i>
+                            <div class="mb-3" style="width: 72px; height: 72px; margin: 0 auto; background: var(--color-primary); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-person" style="font-size: 2rem; color: var(--color-text-inverse);"></i>
                             </div>
                             <h2 class="fw-bold">欢迎回来</h2>
-                            <p class="text-gray-600 mb-0">登录您的 BookMusic Mall 账户</p>
+                            <p style="color: var(--color-text-muted); margin-bottom: 0;">登录您的 BookMusic Mall 账户</p>
                         </div>
                         
                         <?php if (isset($error) && $error): ?>

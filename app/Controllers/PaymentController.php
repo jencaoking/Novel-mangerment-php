@@ -583,11 +583,3 @@ class PaymentController
         }
     }
 }
-
-if (!function_exists('json_response')) {
-    function json_response($data) {
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-}

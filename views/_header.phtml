@@ -11,10 +11,10 @@
 <body>
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a class="navbar-brand" href="/">
-            <i class="bi bi-music-note-beamed me-2" style="font-size: 1.5rem;"></i>
-            BookMusic Mall
-        </a>
+<a class="navbar-brand" href="/">
+                            <i class="bi bi-music-note-beamed"></i>
+                            BookMusic Mall
+                        </a>
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -42,7 +42,7 @@
                         <a class="nav-link position-relative" href="/user/cart">
                             <i class="bi bi-cart me-1"></i> 购物车
                             <?php if (isset($_SESSION['cart_count']) && $_SESSION['cart_count'] > 0): ?>
-                                <span class="badge bg-danger position-absolute top-0 start-100 translate-middle rounded-pill" style="font-size: 0.65rem;">
+                                <span class="badge badge-danger position-absolute top-0 start-100 translate-middle" data-cart-count>
                                     <?= $_SESSION['cart_count'] ?>
                                 </span>
                             <?php endif; ?>

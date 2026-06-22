@@ -2,9 +2,9 @@
 -- 小说与音乐数字内容销售平台
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS bookmusic_mall DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS bookmusic DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE bookmusic_mall;
+USE bookmusic;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (

@@ -148,6 +148,13 @@ function jsonResponse($data, $code = 200) {
 }
 
 /**
+ * JSON响应（兼容旧调用）
+ */
+function json_response($data, $code = 200) {
+    jsonResponse($data, $code);
+}
+
+/**
  * 上传文件
  */
 function uploadFile($file, $targetDir, $allowedTypes, $maxSize) {

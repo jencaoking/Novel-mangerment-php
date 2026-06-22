@@ -43,6 +43,23 @@ define('ALIPAY_GATEWAY_URL', 'https://openapi.alipay.com/gateway.do');
 define('ALIPAY_RETURN_URL', SITE_URL . 'payment/return');
 define('ALIPAY_NOTIFY_URL', SITE_URL . 'payment/notify');
 
+// 微信支付配置
+define('WECHAT_MCH_ID', '');
+define('WECHAT_APP_ID', '');
+define('WECHAT_API_V3_KEY', '');
+define('WECHAT_CERT_SERIAL', '');
+define('WECHAT_PRIVATE_KEY_PATH', __DIR__ . '/../cert/apiclient_key.pem');
+define('WECHAT_CERT_PATH', __DIR__ . '/../cert/apiclient_cert.pem');
+define('WECHAT_PLATFORM_CERT_SERIAL', '');
+define('WECHAT_NOTIFY_URL', SITE_URL . 'payment/wechat/notify');
+
+// Resend 邮件服务配置
+define('RESEND_API_KEY', 're_xxxxxxxxx');
+
+// Sentry 错误监控配置
+define('SENTRY_DSN', '');
+define('SENTRY_ENVIRONMENT', 'development');
+
 // 分页配置
 define('ITEMS_PER_PAGE', 12);
 

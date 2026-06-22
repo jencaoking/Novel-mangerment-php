@@ -388,6 +388,149 @@ class AdminController
     }
 
     /**
+     * 分类管理列表页
+     */
+    public function categories()
+    {
+        $categories = $this->categoryModel->getAllCategories();
+        $currentPage = 'categories';
+        $pageTitle = '分类管理';
+        require __DIR__ . '/../../views/admin/categories.phtml';
+    }
+
+    /**
+     * 添加分类
+     */
+    public function addCategory()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/categories');
+            return;
+        }
+
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'CSRF 验证失败';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $name = trim($_POST['name'] ?? '');
+        $type = $_POST['type'] ?? '';
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+        if (empty($name)) {
+            $_SESSION['error'] = '分类名称不能为空';
+            redirect('/admin/categories');
+            return;
+        }
+
+        if (!in_array($type, ['novel', 'music'])) {
+            $_SESSION['error'] = '无效的分类类型';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $this->categoryModel->createCategory($name, $type, $sortOrder);
+        $_SESSION['success'] = '分类添加成功';
+        redirect('/admin/categories');
+    }
+
+    /**
+     * 更新分类
+     */
+    public function updateCategory()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/categories');
+            return;
+        }
+
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'CSRF 验证失败';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $sortOrder = (int)($_POST['sort_order'] ?? 0);
+
+        if ($categoryId <= 0 || empty($name)) {
+            $_SESSION['error'] = '参数无效';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $category = $this->categoryModel->find($categoryId);
+        if (!$category) {
+            $_SESSION['error'] = '分类不存在';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $this->categoryModel->updateCategory($categoryId, $name, $sortOrder);
+        $_SESSION['success'] = '分类更新成功';
+        redirect('/admin/categories');
+    }
+
+    /**
+     * 切换分类状态
+     */
+    public function toggleCategoryStatus()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/categories');
+            return;
+        }
+
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'CSRF 验证失败';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        if ($categoryId > 0) {
+            $this->categoryModel->toggleStatus($categoryId);
+            $_SESSION['success'] = '分类状态已更新';
+        }
+
+        redirect('/admin/categories');
+    }
+
+    /**
+     * 删除分类
+     */
+    public function deleteCategory()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('/admin/categories');
+            return;
+        }
+
+        if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+            $_SESSION['error'] = 'CSRF 验证失败';
+            redirect('/admin/categories');
+            return;
+        }
+
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        if ($categoryId <= 0) {
+            redirect('/admin/categories');
+            return;
+        }
+
+        try {
+            $this->categoryModel->delete($categoryId);
+            $_SESSION['success'] = '分类已删除';
+        } catch (\PDOException $e) {
+            $_SESSION['error'] = '该分类下仍有商品，无法删除';
+        }
+
+        redirect('/admin/categories');
+    }
+
+    /**
      * 评价管理列表页
      */
     public function reviews() {

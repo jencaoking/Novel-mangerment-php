@@ -38,6 +38,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a href="/admin/categories" class="nav-link <?= isset($currentPage) && $currentPage === 'categories' ? 'active' : '' ?>">
+                        <i class="bi bi-tags"></i>
+                        <span>分类管理</span>
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a href="/admin/users" class="nav-link <?= isset($currentPage) && $currentPage === 'users' ? 'active' : '' ?>">
                         <i class="bi bi-people"></i>
                         <span>用户管理</span>

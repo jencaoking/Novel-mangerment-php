@@ -1,0 +1,232 @@
+<?php $currentPage = 'categories'; $pageTitle = '分类管理'; ?>
+<?php include __DIR__ . '/_header.phtml'; ?>
+
+<div class="page-header">
+    <h1 class="page-title">分类管理</h1>
+    <p class="page-description">管理小说和音乐的商品分类</p>
+</div>
+
+<?php if (isset($_SESSION['success'])): ?>
+    <div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><?= e($_SESSION['success']) ?></div>
+    <?php unset($_SESSION['success']); ?>
+<?php endif; ?>
+<?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><?= e($_SESSION['error']) ?></div>
+    <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="card-title mb-0">小说分类</h5>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal" onclick="document.getElementById('addType').value='novel'">
+                    <i class="bi bi-plus-circle"></i> 添加分类
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>分类名称</th>
+                    <th>排序</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $novelCategories = array_filter($categories, fn($c) => $c['type'] === 'novel');
+                if (empty($novelCategories)):
+                ?>
+                    <tr><td colspan="5" class="text-center text-muted py-4">暂无小说分类</td></tr>
+                <?php else: ?>
+                    <?php foreach ($novelCategories as $cat): ?>
+                        <tr>
+                            <td><?= $cat['id'] ?></td>
+                            <td><strong><?= e($cat['name']) ?></strong></td>
+                            <td><?= $cat['sort_order'] ?></td>
+                            <td>
+                                <span class="badge <?= $cat['status'] ? 'bg-success' : 'bg-secondary' ?>">
+                                    <?= $cat['status'] ? '启用' : '禁用' ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editCategoryModal"
+                                        onclick="editCategory(<?= $cat['id'] ?>, '<?= e($cat['name']) ?>', <?= $cat['sort_order'] ?>)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="POST" action="/admin/categories/toggle" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                        <button type="submit" class="btn btn-outline-<?= $cat['status'] ? 'warning' : 'success' ?> btn-sm" title="<?= $cat['status'] ? '禁用' : '启用' ?>">
+                                            <i class="bi bi-<?= $cat['status'] ? 'pause-circle' : 'play-circle' ?>"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/admin/categories/delete" class="d-inline"
+                                        onsubmit="return confirm('确定要删除分类「<?= e($cat['name']) ?>」吗？')">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="删除">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="card-title mb-0">音乐分类</h5>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal" onclick="document.getElementById('addType').value='music'">
+                    <i class="bi bi-plus-circle"></i> 添加分类
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>分类名称</th>
+                    <th>排序</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $musicCategories = array_filter($categories, fn($c) => $c['type'] === 'music');
+                if (empty($musicCategories)):
+                ?>
+                    <tr><td colspan="5" class="text-center text-muted py-4">暂无音乐分类</td></tr>
+                <?php else: ?>
+                    <?php foreach ($musicCategories as $cat): ?>
+                        <tr>
+                            <td><?= $cat['id'] ?></td>
+                            <td><strong><?= e($cat['name']) ?></strong></td>
+                            <td><?= $cat['sort_order'] ?></td>
+                            <td>
+                                <span class="badge <?= $cat['status'] ? 'bg-success' : 'bg-secondary' ?>">
+                                    <?= $cat['status'] ? '启用' : '禁用' ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editCategoryModal"
+                                        onclick="editCategory(<?= $cat['id'] ?>, '<?= e($cat['name']) ?>', <?= $cat['sort_order'] ?>)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="POST" action="/admin/categories/toggle" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                        <button type="submit" class="btn btn-outline-<?= $cat['status'] ? 'warning' : 'success' ?> btn-sm" title="<?= $cat['status'] ? '禁用' : '启用' ?>">
+                                            <i class="bi bi-<?= $cat['status'] ? 'pause-circle' : 'play-circle' ?>"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/admin/categories/delete" class="d-inline"
+                                        onsubmit="return confirm('确定要删除分类「<?= e($cat['name']) ?>」吗？')">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="删除">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 添加分类弹窗 -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/admin/categories/add">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                <input type="hidden" name="type" id="addType" value="novel">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加分类</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">分类名称</label>
+                        <input type="text" name="name" class="form-control" required placeholder="请输入分类名称">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">排序值</label>
+                        <input type="number" name="sort_order" class="form-control" value="0" min="0">
+                        <small class="text-muted">数字越小越靠前</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">确认添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑分类弹窗 -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="/admin/categories/update">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                <input type="hidden" name="category_id" id="editCategoryId">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑分类</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">分类名称</label>
+                        <input type="text" name="name" id="editCategoryName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">排序值</label>
+                        <input type="number" name="sort_order" id="editCategorySort" class="form-control" min="0">
+                        <small class="text-muted">数字越小越靠前</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function editCategory(id, name, sortOrder) {
+    document.getElementById('editCategoryId').value = id;
+    document.getElementById('editCategoryName').value = name;
+    document.getElementById('editCategorySort').value = sortOrder;
+}
+</script>
+
+<?php include __DIR__ . '/_footer.phtml'; ?>

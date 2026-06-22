@@ -167,6 +167,12 @@ try {
     $router->post('/admin/upload', 'AdminController@upload', ['AdminMiddleware']);
     
     // 评价管理路由
+    $router->get('/admin/categories', 'AdminController@categories', ['AdminMiddleware']);
+    $router->post('/admin/categories/add', 'AdminController@addCategory', ['AdminMiddleware']);
+    $router->post('/admin/categories/update', 'AdminController@updateCategory', ['AdminMiddleware']);
+    $router->post('/admin/categories/toggle', 'AdminController@toggleCategoryStatus', ['AdminMiddleware']);
+    $router->post('/admin/categories/delete', 'AdminController@deleteCategory', ['AdminMiddleware']);
+
     $router->get('/admin/reviews', 'AdminController@reviews', ['AdminMiddleware']);
     $router->post('/admin/reviews/toggle/{id}', 'AdminController@toggleReviewStatus', ['AdminMiddleware']);
     
